@@ -1,0 +1,36 @@
+<header class="top-header">
+    <div class="header-left d-flex align-items-center">
+        <button id="toggleSidebar" class="btn text-secondary me-3 p-0" type="button">
+            <i class="bx bx-menu fs-3"></i>
+        </button>
+        <h2 class="header-title mb-0"><%- typeof title != 'undefined' ? title : 'Admin Portal' %></h2>
+    </div>
+    
+    <div class="header-right">
+        <div class="dropdown">
+            <button class="btn dropdown-toggle d-flex align-items-center gap-2 border-0 bg-transparent p-0" type="button" id="avatarDropdown" aria-expanded="false">
+                <% if (locals.user && user.user_data && user.user_data.msg && user.user_data.msg[0] && user.user_data.msg[0].profile_pic) { %>
+                    <img src="<%= user.user_data.msg[0].profile_pic %>" alt="Admin" class="avatar-img">
+                <% } else { %>
+                    <img src="https://ui-avatars.com/api/?name=<%= (locals.user && user.user_data && user.user_data.msg && user.user_data.msg[0]) ? user.user_data.msg[0].user_id : 'Admin' %>&background=4f46e5&color=fff" alt="Admin" class="avatar-img">
+                <% } %>
+                <span class="user-name d-none d-sm-inline"><%= (locals.user && user.user_data && user.user_data.msg && user.user_data.msg[0]) ? user.user_data.msg[0].user_id : 'Admin' %></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-light-subtle mt-2" aria-labelledby="avatarDropdown">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/admin/settings">
+                        <i class="bx bx-cog fs-5 text-secondary"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" href="/logout">
+                        <i class="bx bx-log-out fs-5"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

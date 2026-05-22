@@ -1,0 +1,7 @@
+node_modules
+.env
+migrate.js
+package-lock.json
+school_collection_backup.sql
+* copy.js
+test_students.csv

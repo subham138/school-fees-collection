@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- typeof title != 'undefined' ? title + ' | School Collection' : 'School Collection Dashboard' %></title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- BoxIcons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <link href='/css/bootstrap@5.3.8/bootstrap.min.css' rel='stylesheet'>
+    
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Page Specific CSS -->
+    <%- typeof extraCSS != 'undefined' ? extraCSS : '' %>
+</head>
+<body class="light-mode">
+    <div class="layout-wrapper">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+        
+        <div class="main-content">
+            <!-- Header -->
+            <%- include('partials/header') %>
+            
+            <!-- Main Content Area -->
+            <main class="content-body">
+                <!-- Flash Messages -->
+                <% if(success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success"><i class='bx bx-check-circle'></i> <%= success_msg %></div>
+                <% } %>
+                <% if(error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger"><i class='bx bx-error-circle'></i> <%= error_msg %></div>
+                <% } %>
+                <% if(error && error.length > 0) { %>
+                    <div class="alert alert-danger"><i class='bx bx-error-circle'></i> <%= error %></div>
+                <% } %>
+
+                <!-- Rendered View -->
+                <%- body %>
+            </main>
+            
+            <!-- Footer -->
+            <%- include('partials/footer') %>
+        </div>
+    </div>
+
+    <script src="/js/bootstrap@5.3.8/bootstrap.bundle.min.js"></script>
+    <script src="/js/bootstrap@5.3.8/popper.min.js"></script>
+    <script src="/js/bootstrap@5.3.8/bootstrap.min.js"></script>
+    <script src="/js/jquery-3.7.1/jquery-3.7.1.min.js"></script>
+
+    <!-- Global JS -->
+    <script src="/js/main.js"></script>
+    
+    <!-- Page Specific JS -->
+    <%- typeof extraJS != 'undefined' ? extraJS : '' %>
+</body>
+</html>

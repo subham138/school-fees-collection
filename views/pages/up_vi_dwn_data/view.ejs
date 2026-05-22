@@ -1,0 +1,187 @@
+<div class="row g-4">
+    <!-- COLUMN 1: Selection Panel -->
+    <div class="col-lg-4 col-md-5">
+        <div class="card shadow-sm border border-light-subtle rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3">
+                <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 15px;">
+                    <i class="bx bx-filter-alt text-primary fs-5"></i>
+                    <span>Roster Filters</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form action="/admin/upload_download/view" method="GET" id="filterForm">
+                    <% if (user_type === 'A') { %>
+                        <!-- Super Admin View: School and Agent selection -->
+                        <div class="mb-3">
+                            <label for="selectSchool" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Select School <span class="text-danger">*</span></label>
+                            <select class="form-select border-light-subtle cursor-pointer" id="selectSchool" name="school_id" style="font-size: 14px;" required>
+                                <option value="" disabled <%= !selected_school_id ? 'selected' : '' %>>Choose school...</option>
+                                <% school_data.forEach(function(school) { %>
+                                    <option value="<%= school.school_id %>" <%= parseInt(selected_school_id) === school.school_id ? 'selected' : '' %>><%= school.school_name %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="selectAgent" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Select Agent <span class="text-danger">*</span></label>
+                            <select class="form-select border-light-subtle cursor-pointer" id="selectAgent" name="agent_code" style="font-size: 14px;" <%= !selected_school_id ? 'disabled' : '' %> required>
+                                <% if (!selected_school_id) { %>
+                                    <option value="" selected disabled>Select school first...</option>
+                                <% } else { %>
+                                    <option value="" disabled <%= !selected_agent_code ? 'selected' : '' %>>Choose agent...</option>
+                                    <% agent_data.forEach(function(agent) { %>
+                                        <option value="<%= agent.agent_code %>" <%= selected_agent_code === agent.agent_code ? 'selected' : '' %>><%= agent.agent_name %> (<%= agent.agent_code %>)</option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
+                    <% } else { %>
+                        <!-- Regular Admin View: Agent selection only -->
+                        <div class="mb-4">
+                            <label for="selectAgent" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Select Agent <span class="text-danger">*</span></label>
+                            <select class="form-select border-light-subtle cursor-pointer" id="selectAgent" name="agent_code" style="font-size: 14px;" required>
+                                <option value="" disabled <%= !selected_agent_code ? 'selected' : '' %>>Choose agent...</option>
+                                <% agent_data.forEach(function(agent) { %>
+                                    <option value="<%= agent.agent_code %>" <%= selected_agent_code === agent.agent_code ? 'selected' : '' %>><%= agent.agent_name %> (<%= agent.agent_code %>)</option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    <% } %>
+
+                    <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold py-2 shadow-sm">
+                        <i class="bx bx-search"></i>
+                        <span>Search Roster</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMN 2: Roster Display Panel -->
+    <div class="col-lg-8 col-md-7">
+        <% if (collection_active === null) { %>
+            <!-- Initial State: Prompt selection -->
+            <div class="card shadow-sm border border-light-subtle rounded-3 p-5 text-center">
+                <div class="py-4">
+                    <i class="bx bx-mouse-alt text-primary display-4 mb-3 opacity-75"></i>
+                    <h5 class="fw-bold text-dark mb-2">No Agent Selected</h5>
+                    <p class="text-secondary mx-auto mb-0" style="max-width: 400px; font-size: 14px;">
+                        Please select a school and agent from the filters panel on the left to load the uploaded roster details.
+                    </p>
+                </div>
+            </div>
+        <% } else if (collection_active === false) { %>
+            <!-- Error State: Collection Has Ended -->
+            <div class="card shadow-sm border border-danger-subtle rounded-3 p-5 text-center bg-danger-subtle bg-opacity-10">
+                <div class="py-4">
+                    <i class="bx bx-shield-quarter text-danger display-4 mb-3"></i>
+                    <h4 class="fw-bold text-danger mb-2">Collection Has Ended</h4>
+                    <p class="text-secondary mx-auto mb-0" style="max-width: 500px; font-size: 14px;">
+                        The active collection session for this agent has either ended or has not been initiated. Roster records are only accessible during active collection cycles.
+                    </p>
+                    <div class="mt-4">
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 font-monospace">STATUS: INACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <!-- Success State: Render Roster Accounts -->
+            <div class="card shadow-sm border border-light-subtle rounded-3">
+                <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <h5 class="mb-0 fw-bold text-dark" style="font-size: 15px;">Active Roster Data</h5>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5" style="font-size: 12px;">
+                            <%= accounts.length %> Accounts
+                        </span>
+                    </div>
+                    
+                    <div>
+                        <span class="badge bg-success px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1" style="font-size: 11px;">
+                            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="width: 8px; height: 8px;"></span>
+                            Collection Active
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <% if (accounts.length === 0) { %>
+                        <div class="p-5 text-center text-muted">
+                            <i class="bx bx-folder-open display-4 mb-2 text-secondary"></i>
+                            <p class="fw-medium mb-0">Roster session is active, but no accounts are uploaded yet.</p>
+                        </div>
+                    <% } else { %>
+                        <div class="table-responsive" style="max-height: 550px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                                <thead class="table-light sticky-top" style="z-index: 5;">
+                                    <tr>
+                                        <th class="py-2.5 ps-3">Class</th>
+                                        <th class="py-2.5">Roll No</th>
+                                        <th class="py-2.5">Student Name</th>
+                                        <th class="py-2.5">Guardian Name</th>
+                                        <th class="py-2.5">Contact No</th>
+                                        <th class="py-2.5 text-end pe-3">Deposit Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% accounts.forEach(function(row) { %>
+                                        <tr>
+                                            <td class="py-2 ps-3 fw-medium text-secondary"><%= row.class_no || 'N/A' %></td>
+                                            <td class="py-2 text-secondary font-monospace"><%= row.roll_no || 'N/A' %></td>
+                                            <td class="py-2 fw-bold text-dark"><%= row.student_name %></td>
+                                            <td class="py-2 text-secondary"><%= row.guardian_name || 'N/A' %></td>
+                                            <td class="py-2 text-secondary"><%= row.contact_no || 'N/A' %></td>
+                                            <td class="py-2 text-end fw-semibold text-primary pe-3">₹<%= parseFloat(row.depost_amt).toFixed(2) %></td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const selectSchool = document.getElementById('selectSchool');
+        const selectAgent = document.getElementById('selectAgent');
+
+        // Dynamic agent loading for Super-Admin
+        if (selectSchool) {
+            selectSchool.addEventListener('change', async (e) => {
+                const schoolId = e.target.value;
+                selectAgent.disabled = true;
+                selectAgent.innerHTML = '<option value="" selected disabled>Loading agents...</option>';
+                
+                try {
+                    const response = await fetch(`/admin/upload_download/agents/${schoolId}`);
+                    const result = await response.json();
+                    
+                    if (result.suc > 0 && result.msg.length > 0) {
+                        selectAgent.disabled = false;
+                        selectAgent.innerHTML = '<option value="" selected disabled>Choose agent...</option>';
+                        result.msg.forEach(agent => {
+                            selectAgent.innerHTML += `<option value="${agent.agent_code}">${agent.agent_name} (${agent.agent_code})</option>`;
+                        });
+                    } else {
+                        selectAgent.innerHTML = '<option value="" selected disabled>No agents found for school...</option>';
+                    }
+                } catch (err) {
+                    console.error("Error loading school agents:", err);
+                    selectAgent.innerHTML = '<option value="" selected disabled>Failed to load agents...</option>';
+                }
+            });
+        }
+
+        // Auto-submit form when Agent selection changes for smoother user experience
+        if (selectAgent) {
+            selectAgent.addEventListener('change', () => {
+                // If in Super Admin, require School to be selected
+                if (selectSchool && !selectSchool.value) return;
+                document.getElementById('filterForm').submit();
+            });
+        }
+    });
+</script>

@@ -1,0 +1,119 @@
+<div class="card shadow-sm border border-light-subtle rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3 d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0 fw-bold text-dark" style="font-size: 18px;">
+            <%= school_id > 0 ? 'Edit School Settings' : 'Register New School' %>
+        </h3>
+        <a href="/admin/school" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5 px-3 py-2 fw-semibold">
+            <i class="bx bx-arrow-back fs-6"></i>
+            <span>Back to List</span>
+        </a>
+    </div>
+    
+    <div class="card-body p-4">
+        <form action="/admin/school/manage" method="POST" class="needs-validation" novalidate>
+            <!-- Hidden School ID -->
+            <input type="hidden" name="school_id" value="<%= school_id %>">
+            
+            <div class="row g-3">
+                <!-- School Name -->
+                <div class="col-md-6">
+                    <label for="school_name" class="form-label fw-semibold text-secondary" style="font-size: 13px;">School Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="school_name" name="school_name" value="<%= school_data.school_name || '' %>" placeholder="e.g. Greenwood High School" required>
+                    <div class="invalid-feedback">Please enter the school name.</div>
+                </div>
+
+                <!-- Registration Date -->
+                <div class="col-md-6">
+                    <label for="reg_date" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Registration Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="reg_date" name="reg_date" value="<%= school_data.reg_date ? dateFormat(school_data.reg_date, "yyyy-mm-dd") : dateFormat(new Date(), "yyyy-mm-dd") %>" required>
+                    <div class="invalid-feedback">Please select a valid registration date.</div>
+                </div>
+
+                <!-- Contact Person -->
+                <div class="col-md-6">
+                    <label for="contact_person" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Contact Person <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="contact_person" name="contact_person" value="<%= school_data.contact_person || '' %>" placeholder="e.g. Mr. Amit Sharma" required>
+                    <div class="invalid-feedback">Please enter the contact person's name.</div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="col-md-6">
+                    <label for="phone_no" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Phone Number <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control" id="phone_no" name="phone_no" value="<%= school_data.phone_no || '' %>" placeholder="e.g. +91 98765 43210" required>
+                    <div class="invalid-feedback">Please enter a valid phone number.</div>
+                </div>
+
+                <!-- Email ID -->
+                <div class="col-md-6">
+                    <label for="email_id" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Email Address</label>
+                    <input type="email" class="form-control" id="email_id" name="email_id" value="<%= school_data.email_id || '' %>" placeholder="e.g. contact@school.edu.in">
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
+                </div>
+
+                <!-- Max Users / Agents -->
+                <div class="col-md-6">
+                    <label for="max_user" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Max Allowed Agents <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="max_user" name="max_user" value="<%= school_data.max_user !== undefined ? school_data.max_user : '5' %>" min="1" required>
+                    <div class="invalid-feedback">Maximum users must be at least 1.</div>
+                </div>
+
+                <!-- Device Type -->
+                <div class="col-md-6">
+                    <label for="device_type" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Device Access Level <span class="text-danger">*</span></label>
+                    <select class="form-select" id="device_type" name="device_type" required>
+                        <option value="" disabled <%= !school_data.device_type ? 'selected' : '' %>>Choose device type...</option>
+                        <option value="Mobile" <%= school_data.device_type === 'Mobile' ? 'selected' : '' %>>Mobile App Only</option>
+                        <option value="POS" <%= school_data.device_type === 'POS' ? 'selected' : '' %>>POS Handheld Only</option>
+                        <option value="Web" <%= school_data.device_type === 'Web' ? 'selected' : '' %>>Web Portal Only</option>
+                        <option value="All" <%= school_data.device_type === 'All' || !school_data.device_type ? 'selected' : '' %>>All Devices Allowed</option>
+                    </select>
+                    <div class="invalid-feedback">Please select a device access type.</div>
+                </div>
+
+                <!-- Active Status -->
+                <div class="col-md-6">
+                    <label for="active_flag" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Account Status <span class="text-danger">*</span></label>
+                    <select class="form-select" id="active_flag" name="active_flag" required>
+                        <option value="Y" <%= school_data.active_flag === 'Y' || !school_data.active_flag ? 'selected' : '' %>>Active</option>
+                        <option value="N" <%= school_data.active_flag === 'N' ? 'selected' : '' %>>In-Active</option>
+                    </select>
+                    <div class="invalid-feedback">Please choose the school status.</div>
+                </div>
+
+                <!-- School Address -->
+                <div class="col-12">
+                    <label for="school_address" class="form-label fw-semibold text-secondary" style="font-size: 13px;">School Address <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="school_address" name="school_address" rows="3" placeholder="Enter complete billing/postal address..." required><%= school_data.school_address || '' %></textarea>
+                    <div class="invalid-feedback">Please enter the school address.</div>
+                </div>
+            </div>
+
+            <!-- Submit Button Footer Section -->
+            <div class="d-flex justify-content-end gap-2 border-top border-light-subtle mt-4 pt-3">
+                <a href="/admin/school" class="btn btn-light px-4 py-2 fw-semibold text-secondary border border-light-subtle">Cancel</a>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-1.5 px-4 py-2 fw-semibold shadow-sm">
+                    <i class="bx bx-save fs-5"></i>
+                    <span><%= school_id > 0 ? 'Save Updates' : 'Register School' %></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bootstrap form validation initializer -->
+<script>
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>

@@ -1,0 +1,81 @@
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 class="card-title" style="margin: 0;">Dataset Uploads</h3>
+        <button class="btn" style="background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="document.getElementById('uploadModal').style.display='block'">
+            <i class='bx bx-plus'></i> New Upload
+        </button>
+    </div>
+
+    <!-- Uploads Table -->
+    <div class="table-responsive" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 13px; text-transform: uppercase;">
+                    <th style="padding: 12px 16px;">ID</th>
+                    <th style="padding: 12px 16px;">File Name</th>
+                    <th style="padding: 12px 16px;">Period</th>
+                    <th style="padding: 12px 16px;">Rows</th>
+                    <th style="padding: 12px 16px;">Status</th>
+                    <th style="padding: 12px 16px;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if(uploads && uploads.length > 0) { %>
+                    <% uploads.forEach(upload => { %>
+                        <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 16px; font-weight: 500;">#<%= upload.upload_id %></td>
+                            <td style="padding: 16px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class='bx bxs-file-blank' style="color: var(--text-light); font-size: 20px;"></i>
+                                    <%= upload.file_name %>
+                                </div>
+                            </td>
+                            <td style="padding: 16px;"><span style="background: var(--bg-surface-hover); padding: 4px 8px; border-radius: 4px; font-size: 13px;"><%= upload.fee_month %>/<%= upload.fee_year %></span></td>
+                            <td style="padding: 16px;"><%= upload.total_rows %></td>
+                            <td style="padding: 16px;">
+                                <% if(upload.status === 'pending') { %>
+                                    <span style="color: var(--status-warning); background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">Pending Assignment</span>
+                                <% } else if(upload.status === 'assigned') { %>
+                                    <span style="color: var(--status-info); background: rgba(59, 130, 246, 0.1); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">Assigned</span>
+                                <% } else { %>
+                                    <span style="color: var(--status-success); background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">Completed</span>
+                                <% } %>
+                            </td>
+                            <td style="padding: 16px; color: var(--text-muted); font-size: 14px;">
+                                <%= new Date(upload.created_at).toLocaleDateString() %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted);">
+                            <i class='bx bx-folder-open' style="font-size: 48px; color: var(--border-color); margin-bottom: 10px; display: block;"></i>
+                            No uploads found. Click 'New Upload' to get started.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Simple Modal for Upload -->
+<div id="uploadModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; width: 400px; padding: 24px; border-radius: 12px; margin: 10vh auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Upload Excel/CSV</h3>
+            <button onclick="document.getElementById('uploadModal').style.display='none'" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form action="/uploads/process" method="POST" enctype="multipart/form-data">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Select File</label>
+                <input type="file" name="dataset" accept=".xlsx, .xls, .csv" required style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;">
+                <small style="color: var(--text-muted); margin-top: 5px; display: block;">Columns must include: Student Name, Class, Roll No, Fees, Month, Year</small>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="document.getElementById('uploadModal').style.display='none'" style="padding: 10px 16px; border: 1px solid var(--border-color); background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 10px 16px; border: none; background: var(--primary-color); color: white; border-radius: 6px; cursor: pointer;">Upload Data</button>
+            </div>
+        </form>
+    </div>
+</div>

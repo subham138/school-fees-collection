@@ -1,0 +1,566 @@
+<div class="row g-4">
+    <!-- COLUMN 1: Selection & Agent Info Card -->
+    <div class="col-lg-4 col-md-5">
+        <!-- Section 1: Selection Panel -->
+        <div class="card shadow-sm border border-light-subtle rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3">
+                <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 15px;">
+                    <i class="bx bx-cog text-primary fs-5"></i>
+                    <span>Target Selection</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <% if (user_type === 'A') { %>
+                    <!-- Super Admin View: School and Agent selection -->
+                    <div class="mb-3">
+                        <label for="selectSchool" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Select School <span class="text-danger">*</span></label>
+                        <select class="form-select border-light-subtle cursor-pointer" id="selectSchool" style="font-size: 14px;">
+                            <option value="" selected disabled>Choose school...</option>
+                            <% school_data.forEach(function(school) { %>
+                                <option value="<%= school.school_id %>"><%= school.school_name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="selectAgent" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Select Agent <span class="text-danger">*</span></label>
+                        <select class="form-select border-light-subtle cursor-pointer" id="selectAgent" style="font-size: 14px;" disabled>
+                            <option value="" selected disabled>Select school first...</option>
+                        </select>
+                    </div>
+                <% } else { %>
+                    <!-- Regular Admin View: Agent selection only -->
+                    <div>
+                        <label for="selectAgent" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Select Agent <span class="text-danger">*</span></label>
+                        <select class="form-select border-light-subtle cursor-pointer" id="selectAgent" style="font-size: 14px;">
+                            <option value="" selected disabled>Choose agent...</option>
+                            <% agent_data.forEach(function(agent) { %>
+                                <option value="<%= agent.agent_code %>" data-school-id="<%= agent.school_id %>"><%= agent.agent_name %> (<%= agent.agent_code %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Section 2: Selected Agent Information Preview Section -->
+        <div class="card shadow-sm border border-light-subtle rounded-3 d-none" id="agentInfoCard">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3">
+                <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 15px;">
+                    <i class="bx bx-user-circle text-primary fs-5"></i>
+                    <span>Agent Information</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex flex-column gap-3">
+                    <!-- Basic details list -->
+                    <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
+                        <span class="text-muted" style="font-size: 13px;">Agent Name</span>
+                        <span class="fw-bold text-dark" id="infoAgentName" style="font-size: 13px;">N/A</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
+                        <span class="text-muted" style="font-size: 13px;">Agent Code</span>
+                        <span class="badge bg-light text-dark border border-light-subtle font-monospace px-2.5 py-1.5" id="infoAgentCode" style="font-size: 12px;">N/A</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
+                        <span class="text-muted" style="font-size: 13px;">Last Upload Date</span>
+                        <span class="fw-semibold text-secondary" id="infoLastUpload" style="font-size: 13px;">Never</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
+                        <span class="text-muted" style="font-size: 13px;">Max Collection Limit</span>
+                        <span class="fw-bold text-secondary" id="infoMaxAmt" style="font-size: 13px;">₹0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom border-light-subtle pb-2">
+                        <span class="text-muted" style="font-size: 13px;">Max Collection Date</span>
+                        <span class="fw-semibold text-secondary" id="infoMaxDate" style="font-size: 13px;">Unlimited</span>
+                    </div>
+                    
+                    <!-- Dynamic collection status indicator -->
+                    <div class="mt-2 text-center p-3 rounded-3" id="statusBadgeContainer">
+                        <div class="fw-bold fs-6 mb-1 d-flex align-items-center justify-content-center gap-1.5" id="infoStatusTitle">
+                            <i class='bx bx-loader-alt bx-spin'></i> Checking Status...
+                        </div>
+                        <div class="text-secondary" style="font-size: 12px;" id="infoStatusDesc">Please wait while verifying collections...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMN 2: Uploader & Preview Panel -->
+    <div class="col-lg-8 col-md-7">
+        <!-- Section 3: Upload Excel or CSV -->
+        <div class="card shadow-sm border border-light-subtle rounded-3 mb-4 d-none" id="uploaderCard">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3">
+                <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 15px;">
+                    <i class="bx bx-cloud-upload text-primary fs-5"></i>
+                    <span>Select Roster Spreadsheet</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <!-- Drag and drop zone -->
+                <div class="border border-2 border-dashed border-light-subtle rounded-3 p-5 text-center cursor-pointer bg-light-subtle hover-bg-light transition" id="dropzone" onclick="document.getElementById('fileInput').click();">
+                    <i class="bx bx-spreadsheet text-primary display-4 mb-3"></i>
+                    <h6 class="fw-bold text-dark mb-1">Click to select or drag & drop files</h6>
+                    <span class="text-secondary" style="font-size: 12px;">Supports Excel (.xlsx, .xls) and CSV files</span>
+                    <input type="file" class="d-none" id="fileInput" accept=".xlsx, .xls, .csv">
+                </div>
+
+                <!-- Template Guideline Section -->
+                <div class="mt-4 bg-light p-3 rounded-3 border border-light-subtle d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary-subtle text-primary rounded-circle p-2.5 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bx bx-file fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0.5" style="font-size: 13px;">Spreadsheet Template Required</h6>
+                            <p class="text-secondary mb-0" style="font-size: 11.5px;">Rosters must contain matching headers. Use our pre-formatted template to avoid import errors.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1.5 px-3 py-2 fw-semibold w-100 w-sm-auto" type="button" onclick="downloadSampleTemplate();">
+                            <i class="bx bx-download fs-5"></i>
+                            <span>Download Template</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Preview Section -->
+        <div class="card shadow-sm border border-light-subtle rounded-3 mb-4 d-none" id="previewCard">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="mb-0 fw-bold text-dark" style="font-size: 15px;">Parsed Accounts Preview</h5>
+                    <span class="badge bg-primary px-2.5 py-1.5" id="previewCountBadge" style="font-size: 12px;">0 Accounts</span>
+                </div>
+                
+                <!-- Action button triggers upload -->
+                <div>
+                    <button class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 fw-semibold" id="btnUpload" onclick="startChunkUpload();">
+                        <i class="bx bx-check-double fs-5"></i>
+                        <span>Upload Dataset</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <!-- Chunk Processing Status Card -->
+                <div class="p-4 border-bottom border-light-subtle d-none" id="progressContainer">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-dark" id="progressStatusText" style="font-size: 13px;">Preparing Upload...</span>
+                        <span class="fw-bold text-primary font-monospace" id="progressPercentText" style="font-size: 13px;">0%</span>
+                    </div>
+                    <div class="progress rounded-pill mb-1" style="height: 10px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated rounded-pill" id="progressBar" role="progressbar" style="width: 0%;"></div>
+                    </div>
+                    <span class="text-secondary" style="font-size: 11px;" id="progressRowsCount">Processing record 0 of 0...</span>
+                </div>
+
+                <!-- Table display parsed sheet -->
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0" id="previewTable" style="font-size: 13px;">
+                        <thead class="table-light sticky-top" style="z-index: 5;">
+                            <tr>
+                                <th class="py-2.5 ps-3">Class</th>
+                                <th class="py-2.5">Roll No</th>
+                                <th class="py-2.5">Student Name</th>
+                                <th class="py-2.5">Guardian Name</th>
+                                <th class="py-2.5">Contact No</th>
+                                <th class="py-2.5 text-end pe-3">Deposit Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamically populated rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load SheetJS CDN for frontend spreadsheet parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- AJAX and Excel Upload Controller Script -->
+<script>
+    let activeSchoolId = null;
+    let activeAgentCode = null;
+    let allowUpload = false;
+    let parsedRows = [];
+    const CHUNK_SIZE = 100; // Batch upload size
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Drag and Drop drag events styling
+        const dropzone = document.getElementById('dropzone');
+        if (dropzone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('border-primary', 'bg-light');
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('border-primary', 'bg-light');
+                }, false);
+            });
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    document.getElementById('fileInput').files = files;
+                    handleFileSelection(files[0]);
+                }
+            }, false);
+        }
+
+        // File input change handler
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelection(e.target.files[0]);
+                }
+            });
+        }
+
+        // Dropdown Selection Listeners
+        const selectSchool = document.getElementById('selectSchool');
+        if (selectSchool) {
+            selectSchool.addEventListener('change', async (e) => {
+                activeSchoolId = e.target.value;
+                activeAgentCode = null;
+                resetUploaderAndPreview();
+                
+                // Reset agent dropdown
+                const selectAgent = document.getElementById('selectAgent');
+                selectAgent.disabled = true;
+                selectAgent.innerHTML = '<option value="" selected disabled>Loading agents...</option>';
+                
+                try {
+                    const response = await fetch(`/admin/upload_download/agents/${activeSchoolId}`);
+                    const result = await response.json();
+                    
+                    if (result.suc > 0 && result.msg.length > 0) {
+                        selectAgent.disabled = false;
+                        selectAgent.innerHTML = '<option value="" selected disabled>Select agent...</option>';
+                        result.msg.forEach(agent => {
+                            selectAgent.innerHTML += `<option value="${agent.agent_code}">${agent.agent_name} (${agent.agent_code})</option>`;
+                        });
+                    } else {
+                        selectAgent.innerHTML = '<option value="" selected disabled>No agents found for school...</option>';
+                    }
+                } catch (err) {
+                    console.error("Error loading school agents:", err);
+                    selectAgent.innerHTML = '<option value="" selected disabled>Failed to load agents...</option>';
+                }
+            });
+        }
+
+        const selectAgent = document.getElementById('selectAgent');
+        if (selectAgent) {
+            selectAgent.addEventListener('change', (e) => {
+                activeAgentCode = e.target.value;
+                if (!selectSchool) {
+                    // Regular Admin flow: get school_id from data-attribute
+                    const selectedOpt = selectAgent.options[selectAgent.selectedIndex];
+                    activeSchoolId = selectedOpt.getAttribute('data-school-id');
+                }
+                resetUploaderAndPreview();
+                loadAgentDetails();
+            });
+        }
+    });
+
+    // Reset components to clear old agent values
+    function resetUploaderAndPreview() {
+        document.getElementById('agentInfoCard').classList.add('d-none');
+        document.getElementById('uploaderCard').classList.add('d-none');
+        document.getElementById('previewCard').classList.add('d-none');
+        document.getElementById('progressContainer').classList.add('d-none');
+        document.getElementById('fileInput').value = '';
+        parsedRows = [];
+    }
+
+    // AJAX load selected agent settings and check transaction locks
+    async function loadAgentDetails() {
+        const agentCard = document.getElementById('agentInfoCard');
+        const uploaderCard = document.getElementById('uploaderCard');
+        const badgeContainer = document.getElementById('statusBadgeContainer');
+        const statusTitle = document.getElementById('infoStatusTitle');
+        const statusDesc = document.getElementById('infoStatusDesc');
+        
+        agentCard.classList.remove('d-none');
+        badgeContainer.className = "mt-2 text-center p-3 rounded-3 bg-light text-secondary";
+        statusTitle.innerHTML = `<i class='bx bx-loader-alt bx-spin fs-5'></i> Checking Status...`;
+        statusDesc.innerHTML = "Please wait while verifying collections...";
+        
+        try {
+            const response = await fetch(`/admin/upload_download/agent-info?school_id=${activeSchoolId}&agent_code=${activeAgentCode}`);
+            const result = await response.json();
+            
+            if (result.suc > 0) {
+                const info = result.agent_info;
+                document.getElementById('infoAgentName').innerText = info.agent_name;
+                document.getElementById('infoAgentCode').innerText = info.agent_code;
+                
+                // Format Last Upload Date
+                if (result.last_upload_dt) {
+                    const d = new Date(result.last_upload_dt);
+                    document.getElementById('infoLastUpload').innerText = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                } else {
+                    document.getElementById('infoLastUpload').innerText = 'Never';
+                }
+                
+                // Format values
+                document.getElementById('infoMaxAmt').innerText = `₹${parseFloat(info.max_amt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                
+                if (info.allow_collection_end_dt) {
+                    const d = new Date(info.allow_collection_end_dt);
+                    document.getElementById('infoMaxDate').innerText = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                } else {
+                    document.getElementById('infoMaxDate').innerText = 'Unlimited';
+                }
+                
+                // Apply dynamic status indicators
+                allowUpload = result.allow_upload;
+                if (allowUpload) {
+                    badgeContainer.className = "mt-2 text-center p-3 rounded-3 bg-success-subtle text-success border border-success-subtle";
+                    statusTitle.innerHTML = `<i class='bx bx-check-circle fs-5'></i> Ready for Upload`;
+                    statusDesc.innerHTML = "Upload allowed! The agent is available for new roster deployment.";
+                    uploaderCard.classList.remove('d-none');
+                } else {
+                    badgeContainer.className = "mt-2 text-center p-3 rounded-3 bg-danger-subtle text-danger border border-danger-subtle";
+                    statusTitle.innerHTML = `<i class='bx bx-block fs-5'></i> Collection In Progress`;
+                    statusDesc.innerHTML = result.block_reason;
+                }
+            } else {
+                alert("Failed to load agent info: " + result.msg);
+                resetUploaderAndPreview();
+            }
+        } catch (err) {
+            console.error("Error reading agent preview:", err);
+            alert("Connection error loading agent info.");
+            resetUploaderAndPreview();
+        }
+    }
+
+    // Generate and download a sample roster template using SheetJS
+    function downloadSampleTemplate() {
+        const headers = [['Class', 'Roll No', 'Student Name', 'Guardian Name', 'Contact No', 'Deposit Amount']];
+        const sampleData = [['Class IV', '402', 'Aarav Sharma', 'Amit Sharma', '9876543210', 1500.00]];
+        const wsData = headers.concat(sampleData);
+        
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        
+        // Custom column widths
+        ws['!cols'] = [
+            { wch: 15 }, // Class
+            { wch: 10 }, // Roll No
+            { wch: 25 }, // Student Name
+            { wch: 25 }, // Guardian Name
+            { wch: 15 }, // Contact No
+            { wch: 15 }  // Deposit Amount
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, ws, "Roster Template");
+        XLSX.writeFile(wb, "school_roster_template.xlsx");
+    }
+
+    // SheetJS Parse File in Browser locally
+    function handleFileSelection(file) {
+        if (!allowUpload) {
+            alert("Uploading is locked for this agent.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Parse rows into JSON format
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                if (jsonRows.length < 2) {
+                    alert("Spreadsheet contains no data or lacks columns.");
+                    return;
+                }
+                
+                // Map columns
+                const headers = jsonRows[0].map(h => h ? h.toString().toLowerCase().trim() : '');
+                
+                // Identify index mappings
+                const classIdx = headers.findIndex(h => h.includes('class') || h.includes('std'));
+                const rollIdx = headers.findIndex(h => h.includes('roll'));
+                const nameIdx = headers.findIndex(h => h.includes('student') || h.includes('name'));
+                const guardianIdx = headers.findIndex(h => h.includes('guardian') || h.includes('father') || h.includes('mother'));
+                const contactIdx = headers.findIndex(h => h.includes('contact') || h.includes('phone') || h.includes('mobile'));
+                const depositIdx = headers.findIndex(h => h.includes('deposit') || h.includes('amount') || h.includes('amt') || h.includes('depost'));
+                
+                if (nameIdx === -1) {
+                    alert("Missing expected 'Student Name' column in spreadsheet.");
+                    return;
+                }
+                
+                parsedRows = [];
+                for (let i = 1; i < jsonRows.length; i++) {
+                    const rowData = jsonRows[i];
+                    if (rowData.length === 0 || !rowData[nameIdx]) continue; // Skip empty rows
+                    
+                    parsedRows.push({
+                        class_no: classIdx !== -1 ? rowData[classIdx] || '' : '',
+                        roll_no: rollIdx !== -1 ? rowData[rollIdx] || '' : '',
+                        student_name: rowData[nameIdx] || '',
+                        guardian_name: guardianIdx !== -1 ? rowData[guardianIdx] || '' : '',
+                        contact_no: contactIdx !== -1 ? rowData[contactIdx] || '' : '',
+                        depost_amt: depositIdx !== -1 ? parseFloat(rowData[depositIdx]) || 0.00 : 0.00
+                    });
+                }
+                
+                renderPreviewTable();
+            } catch (err) {
+                console.error("SheetJS Parsing error:", err);
+                alert("Failed to parse the file. Please verify it is a valid spreadsheet.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Render preview accounts list on front page
+    function renderPreviewTable() {
+        const previewCard = document.getElementById('previewCard');
+        const countBadge = document.getElementById('previewCountBadge');
+        const tbody = document.querySelector('#previewTable tbody');
+        
+        tbody.innerHTML = '';
+        previewCard.classList.remove('d-none');
+        countBadge.innerText = `${parsedRows.length} Accounts`;
+        
+        parsedRows.forEach(row => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="py-2 ps-3 fw-medium text-secondary">${row.class_no}</td>
+                    <td class="py-2 text-secondary font-monospace">${row.roll_no}</td>
+                    <td class="py-2 fw-bold text-dark">${row.student_name}</td>
+                    <td class="py-2 text-secondary">${row.guardian_name}</td>
+                    <td class="py-2 text-secondary">${row.contact_no}</td>
+                    <td class="py-2 text-end fw-semibold text-primary pe-3">₹${parseFloat(row.depost_amt).toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        
+        // Scroll smoothly to preview block
+        previewCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // AJAX Sequenced Chunk Upload Controller
+    async function startChunkUpload() {
+        if (!allowUpload || parsedRows.length === 0) return;
+        
+        const confirmText = `Are you sure you want to upload this roster containing ${parsedRows.length} student accounts? Any existing roster for this agent will be completely cleared.`;
+        if (!confirm(confirmText)) return;
+        
+        // Pre-generate the agent_trans_no
+        const activeAgentTransNo = 'TXN/' + activeSchoolId + '/' + activeAgentCode + '/' + Date.now();
+        
+        // Disable actions, reveal progress indicators
+        document.getElementById('btnUpload').disabled = true;
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatus = document.getElementById('progressStatusText');
+        const progressPercent = document.getElementById('progressPercentText');
+        const progressCount = document.getElementById('progressRowsCount');
+        
+        progressContainer.classList.remove('d-none');
+        progressContainer.scrollIntoView({ behavior: 'smooth' });
+        
+        const totalRows = parsedRows.length;
+        const totalChunks = Math.ceil(totalRows / CHUNK_SIZE);
+        
+        for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+            const start = chunkIdx * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, totalRows);
+            const chunkRows = parsedRows.slice(start, end);
+            
+            // Set percentages
+            const percent = Math.round((chunkIdx / totalChunks) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressPercent.innerText = `${percent}%`;
+            progressStatus.innerText = `Ingesting roster batch ${chunkIdx + 1} of ${totalChunks}...`;
+            progressCount.innerText = `Uploading student records ${start + 1} to ${end} of ${totalRows}...`;
+            
+            try {
+                const response = await fetch('/admin/upload_download/upload-chunk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        school_id: activeSchoolId,
+                        agent_code: activeAgentCode,
+                        agent_trans_no: activeAgentTransNo,
+                        rows: chunkRows,
+                        is_first_chunk: chunkIdx === 0
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.suc <= 0) {
+                    alert("Roster ingestion aborted at batch " + (chunkIdx + 1) + ": " + result.msg);
+                    document.getElementById('btnUpload').disabled = false;
+                    progressContainer.classList.add('d-none');
+                    return;
+                }
+            } catch (err) {
+                console.error("AJAX Batch upload error:", err);
+                alert("Network connectivity error during upload batch.");
+                document.getElementById('btnUpload').disabled = false;
+                progressContainer.classList.add('d-none');
+                return;
+            }
+        }
+        
+        // All chunks process complete, finalise transaction record
+        progressBar.style.width = '95%';
+        progressPercent.innerText = '95%';
+        progressStatus.innerText = 'Finalising sync settings...';
+        progressCount.innerText = 'Recording transaction details in databases...';
+        
+        try {
+            const response = await fetch('/admin/upload_download/complete-upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    school_id: activeSchoolId,
+                    agent_code: activeAgentCode,
+                    agent_trans_no: activeAgentTransNo
+                })
+            });
+            
+            const result = await response.json();
+            if (result.suc > 0) {
+                progressBar.style.width = '100%';
+                progressPercent.innerText = '100%';
+                progressStatus.className = "fw-bold text-success";
+                progressStatus.innerText = 'Sync Completed Successfully!';
+                
+                alert(`Ingestion Completed!\n\n${totalRows} student records uploaded.\nSync Reference: ${result.agent_trans_no}`);
+                window.location.reload();
+            } else {
+                alert("Roster ingestion finalised with errors: " + result.msg);
+                document.getElementById('btnUpload').disabled = false;
+            }
+        } catch (err) {
+            console.error("Finalising sync error:", err);
+            alert("Network error finalizing sync settings.");
+            document.getElementById('btnUpload').disabled = false;
+        }
+    }
+</script>

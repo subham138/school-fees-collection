@@ -1,0 +1,43 @@
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-label">Total Schools</div>
+            <div class="stat-value"><%= stats.totalSchools %></div>
+        </div>
+        <div class="stat-icon primary">
+            <i class='bx bx-buildings'></i>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-label">Active Agents</div>
+            <div class="stat-value"><%= stats.totalAgents %></div>
+        </div>
+        <div class="stat-icon info">
+            <i class='bx bx-user-pin'></i>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-label">Total Collected</div>
+            <div class="stat-value">₹<%= stats.totalCollected.toLocaleString() %></div>
+        </div>
+        <div class="stat-icon success">
+            <i class='bx bx-wallet'></i>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-content">
+            <div class="stat-label">Pending Uploads</div>
+            <div class="stat-value"><%= stats.pendingAssignments %></div>
+        </div>
+        <div class="stat-icon warning">
+            <i class='bx bx-upload'></i>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 class="card-title">Recent Activity</h3>
+    <p style="color: var(--text-muted);">This is a preview of the main content area. The styling reflects a premium SaaS design using a clean, professional Light Mode palette.</p>
+</div>

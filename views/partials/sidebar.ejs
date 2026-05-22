@@ -1,0 +1,52 @@
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <i class="bx bx-graduation text-primary"></i>
+        <span class="logo-text">FeeCollect</span>
+    </div>
+    <div class="sidebar-menu-wrapper">
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/dashboard/super-admin" class="<%= (locals.currentPage === 'dashboard') ? 'active' : '' %>">
+                    <i class="bx bx-grid-alt"></i>
+                    <span class="menu-text">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/school" class="<%= (locals.currentPage === 'school') ? 'active' : '' %>">
+                    <i class="bx bx-buildings"></i>
+                    <span class="menu-text">Schools</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/agent" class="<%= (locals.currentPage === 'agent') ? 'active' : '' %>">
+                    <i class="bx bx-group"></i>
+                    <span class="menu-text">Agents</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/upload_download" class="<%= (locals.currentPage === 'upload') ? 'active' : '' %>">
+                    <i class="bx bx-upload"></i>
+                    <span class="menu-text">Upload Data</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/upload_download/view" class="<%= (locals.currentPage === 'view_uploaded') ? 'active' : '' %>">
+                    <i class="bx bx-table"></i>
+                    <span class="menu-text">View Uploaded</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/upload_download/send" class="<%= (locals.currentPage === 'send_banking') ? 'active' : '' %>">
+                    <i class="bx bx-export"></i>
+                    <span class="menu-text">Send to Banking</span>
+                </a>
+            </li>
+            <li>
+                <a href="/admin/report" class="<%= (locals.currentPage === 'report') ? 'active' : '' %>">
+                    <i class="bx bx-bar-chart-alt-2"></i>
+                    <span class="menu-text">Reports</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</aside>

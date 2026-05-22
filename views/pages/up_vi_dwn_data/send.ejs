@@ -1,0 +1,395 @@
+<div class="row g-4">
+    <!-- COLUMN 1: Filter Panel -->
+    <div class="col-lg-12 col-md-12">
+        <div class="card shadow-sm border border-light-subtle rounded-3">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3">
+                <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 15px;">
+                    <i class="bx bx-filter-alt text-primary fs-5"></i>
+                    <span>Search Filters</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form action="/admin/upload_download/send" method="GET" id="searchForm">
+                    <div class="row">
+                        <!-- From Date -->
+                        <div class="col-md-3">
+                            <label for="from_date" class="form-label fw-semibold text-secondary" style="font-size: 13px;">From Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control border-light-subtle cursor-pointer" id="from_date" name="from_date" value="<%= from_date %>" required style="font-size: 14px;">
+                        </div>
+    
+                        <!-- To Date -->
+                        <div class="col-md-3">
+                            <label for="to_date" class="form-label fw-semibold text-secondary" style="font-size: 13px;">To Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control border-light-subtle cursor-pointer" id="to_date" name="to_date" value="<%= to_date %>" required style="font-size: 14px;">
+                        </div>
+    
+                        <!-- School Selection (Role-based UI) -->
+                        <% if (user_type === 'A') { %>
+                            <div class="col-md-4">
+                                <label for="school_id" class="form-label fw-semibold text-secondary" style="font-size: 13px;">School Name</label>
+                                <select class="form-select border-light-subtle cursor-pointer" id="school_id" name="school_id" style="font-size: 14px;">
+                                    <option value="">All Schools</option>
+                                    <% school_data.forEach(function(school) { %>
+                                        <option value="<%= school.school_id %>" <%= parseInt(selected_school_id) === school.school_id ? 'selected' : '' %>><%= school.school_name %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        <% } %>
+                        <div class="col-md-2 mt-4">
+                            <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold py-2 shadow-sm">
+                                <i class="bx bx-search"></i>
+                                <span>Search</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMN 2: Ended Collections List -->
+    <div class="col-lg-12 col-md-12">
+        <div class="card shadow-sm border border-light-subtle rounded-3">
+            <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="mb-0 fw-bold text-dark" style="font-size: 15px;">Ended Collection Sessions</h5>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1.5" style="font-size: 12px;">
+                        <%= transactions.length %> Sessions
+                    </span>
+                </div>
+                <div class="text-secondary" style="font-size: 12px;">
+                    <i class="bx bx-calendar text-primary me-1"></i>
+                    <span><%= dateFormat(new Date(from_date), "dd mmm yyyy") %> - <%= dateFormat(new Date(to_date), "dd mmm yyyy") %></span>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <% if (transactions.length === 0) { %>
+                    <!-- Empty State -->
+                    <div class="p-5 text-center text-muted">
+                        <div class="py-5">
+                            <i class="bx bx-package display-3 text-secondary opacity-50 mb-3"></i>
+                            <h5 class="fw-bold text-dark">No Ended Collections Found</h5>
+                            <p class="text-secondary mx-auto mb-0" style="max-width: 450px; font-size: 14px;">
+                                There are no ended collection transactions for the selected date range. Ensure agents have completed their sessions and posted final totals from their mobile devices.
+                            </p>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <!-- Roster Sessions Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 ps-4">Agent Details</th>
+                                    <% if (user_type === 'A') { %>
+                                        <th class="py-3">School Name</th>
+                                    <% } %>
+                                    <th class="py-3">Transaction No</th>
+                                    <th class="py-3 text-end">Collected Amount</th>
+                                    <th class="py-3 text-center">Status</th>
+                                    <th class="py-3 text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% transactions.forEach(function(row) { 
+                                    let status = 'No Collections';
+                                    let statusClass = 'bg-secondary-subtle text-secondary border-secondary-subtle';
+                                    let uploadAllowed = false;
+                                    
+                                    if (row.total_collections > 0) {
+                                        if (row.pending_count > 0) {
+                                            status = 'Pending Upload';
+                                            statusClass = 'bg-warning-subtle text-warning border-warning-subtle';
+                                            uploadAllowed = true;
+                                        } else {
+                                            status = 'Sent to Banking';
+                                            statusClass = 'bg-success-subtle text-success border-success-subtle';
+                                            uploadAllowed = false;
+                                        }
+                                    }
+                                %>
+                                    <tr id="row-<%= row.agent_trans_no.replace(/\//g, '-') %>">
+                                        <!-- Agent Info -->
+                                        <td class="py-3.5 ps-4">
+                                            <div class="fw-bold text-dark"><%= row.agent_name %></div>
+                                            <span class="text-secondary font-monospace" style="font-size: 11px;"><%= row.agent_code %></span>
+                                        </td>
+                                        
+                                        <!-- School Info (Super-Admin only) -->
+                                        <% if (user_type === 'A') { %>
+                                            <td class="py-3.5 text-secondary fw-semibold"><%= row.school_name %></td>
+                                        <% } %>
+                                        
+                                        <!-- Trans No & Date -->
+                                        <td class="py-3.5">
+                                            <div class="fw-semibold text-secondary"><%= row.agent_trans_no %></div>
+                                            <span class="text-muted" style="font-size: 11px;"><i class="bx bx-time me-0.5"></i>Ended: <%= dateFormat(row.send_date, "dd mmm yyyy") %></span>
+                                        </td>
+                                        
+                                        <!-- Deposit Amount -->
+                                        <td class="py-3.5 text-end fw-bold text-primary" style="font-size: 14px;">
+                                            ₹<%= parseFloat(row.total_deposit_amt).toFixed(2) %>
+                                            <div class="text-muted fw-normal" style="font-size: 10px;"><%= row.total_collections %> Receipt(s)</div>
+                                        </td>
+                                        
+                                        <!-- Status Badge -->
+                                        <td class="py-3.5 text-center">
+                                            <span class="badge border px-2.5 py-1.5 fw-semibold status-badge" class="<%= statusClass %>" style="font-size: 11px;">
+                                                <%= status %>
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Action Buttons -->
+                                        <td class="py-3.5 text-end pe-4">
+                                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                                <button type="button" class="btn btn-outline-primary btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1 btn-view-details" data-trans="<%= row.agent_trans_no %>" title="View detailed records in a modal">
+                                                    <i class="bx bx-show fs-6"></i>
+                                                    <span>View Data</span>
+                                                </button>
+                                                
+                                                <button type="button" class="btn btn-success btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1 btn-upload" data-trans="<%= row.agent_trans_no %>" <%= !uploadAllowed ? 'disabled' : '' %> title="Upload all collections to bank server">
+                                                    <i class="bx bx-upload fs-6"></i>
+                                                    <span>Upload Bank</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Container for viewing transaction collections detail -->
+<div class="modal fade" id="collectionsDetailModal" tabindex="-1" aria-labelledby="collectionsDetailModalLabel" aria-hidden="true" style="backdrop-filter: blur(4px);">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0 px-4 py-3">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="collectionsDetailModalLabel" style="font-size: 16px;">
+                    <i class="bx bx-table text-primary"></i>
+                    <span>Collection Details - <span id="modalTransNo" class="font-monospace text-primary-emphasis text-opacity-75"></span></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Spinner / Loading Block -->
+                <div id="modalLoading" class="p-5 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading details...</span>
+                    </div>
+                    <p class="text-secondary mt-2 mb-0" style="font-size: 14px;">Fetching individual collection datasets...</p>
+                </div>
+                
+                <!-- Error Block -->
+                <div id="modalError" class="p-5 text-center text-danger d-none">
+                    <i class="bx bx-error-alt display-4 mb-2"></i>
+                    <h6 class="fw-bold">Unable to load details</h6>
+                    <p class="text-secondary mb-0" style="font-size: 13px;" id="modalErrorMessage"></p>
+                </div>
+                
+                <!-- Roster collections table -->
+                <div id="modalTableContainer" class="table-responsive d-none">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th class="py-2.5 ps-4">Receipt No</th>
+                                <th class="py-2.5">Student Name</th>
+                                <th class="py-2.5">Guardian Name</th>
+                                <th class="py-2.5 text-center">Transaction Date</th>
+                                <th class="py-2.5 text-center">Payment Mode</th>
+                                <th class="py-2.5 text-end">Collected Amount</th>
+                                <th class="py-2.5 text-end">Updated Balance</th>
+                                <th class="py-2.5 text-center pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collectionsDetailBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-light-subtle px-4 py-2.5">
+                <button type="button" class="btn btn-secondary px-4 py-2 fw-semibold" style="font-size: 13px;" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Toast Notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div id="bankingToast" class="toast align-items-center text-white bg-dark border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2" id="toastMessageBody">
+                <!-- Message populated dynamically -->
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Core Bootstrap Modal references
+        const modalEl = document.getElementById('collectionsDetailModal');
+        const modal = new bootstrap.Modal(modalEl);
+        
+        const modalTransNo = document.getElementById('modalTransNo');
+        const modalLoading = document.getElementById('modalLoading');
+        const modalError = document.getElementById('modalError');
+        const modalErrorMessage = document.getElementById('modalErrorMessage');
+        const modalTableContainer = document.getElementById('modalTableContainer');
+        const collectionsDetailBody = document.getElementById('collectionsDetailBody');
+        
+        // Toast notifications
+        const toastEl = document.getElementById('bankingToast');
+        const toast = new bootstrap.Toast(toastEl);
+        const toastMessageBody = document.getElementById('toastMessageBody');
+        
+        // Utility function to present toast alerts
+        const showToast = (message, isSuccess = true) => {
+            toastMessageBody.innerHTML = `
+                <i class="bx ${isSuccess ? 'bx-check-circle text-success' : 'bx-error-circle text-danger'} fs-5"></i>
+                <span class="fw-medium">${message}</span>
+            `;
+            // Remove previous classes
+            toastEl.classList.remove('bg-success', 'bg-danger', 'bg-dark');
+            toastEl.classList.add(isSuccess ? 'bg-success' : 'bg-danger');
+            toast.show();
+        };
+
+        // Apply proper custom classes to status badges initially
+        document.querySelectorAll('.status-badge').forEach(badge => {
+            const statusText = badge.textContent.trim();
+            if (statusText === 'Pending Upload') {
+                badge.className = 'badge border px-2.5 py-1.5 fw-semibold status-badge bg-warning-subtle text-warning border-warning-subtle';
+            } else if (statusText === 'Sent to Banking') {
+                badge.className = 'badge border px-2.5 py-1.5 fw-semibold status-badge bg-success-subtle text-success border-success-subtle';
+            } else {
+                badge.className = 'badge border px-2.5 py-1.5 fw-semibold status-badge bg-secondary-subtle text-secondary border-secondary-subtle';
+            }
+        });
+
+        // 1. CLICK: View Collection Details Modal
+        document.querySelectorAll('.btn-view-details').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const transNo = button.getAttribute('data-trans');
+                modalTransNo.textContent = transNo;
+                
+                // Show modal, display loader
+                modalTableContainer.classList.add('d-none');
+                modalError.classList.add('d-none');
+                modalLoading.classList.remove('d-none');
+                collectionsDetailBody.innerHTML = '';
+                
+                modal.show();
+                
+                try {
+                    const response = await fetch(`/admin/upload_download/collection-details/${encodeURIComponent(transNo)}`);
+                    const result = await response.json();
+                    
+                    if (result.suc > 0 && result.msg.length > 0) {
+                        result.msg.forEach(row => {
+                            const dateStr = new Date(row.transaction_date).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                            });
+                            
+                            const payModeText = row.pay_mode === 'O' ? 'Online' : 'Offline';
+                            const payModeClass = row.pay_mode === 'O' ? 'bg-info-subtle text-info border-info-subtle' : 'bg-secondary-subtle text-secondary border-secondary-subtle';
+                            
+                            const statusText = row.download_flag === 'Y' ? 'Sent' : 'Pending';
+                            const statusClass = row.download_flag === 'Y' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-warning-subtle text-warning border-warning-subtle';
+                            
+                            collectionsDetailBody.innerHTML += `
+                                <tr>
+                                    <td class="py-2.5 ps-4 font-monospace fw-semibold text-secondary">${row.receipt_no}</td>
+                                    <td class="py-2.5 fw-bold text-dark">${row.student_name || 'N/A'}</td>
+                                    <td class="py-2.5 text-secondary">${row.guardian_name || 'N/A'}</td>
+                                    <td class="py-2.5 text-center text-secondary">${dateStr}</td>
+                                    <td class="py-2.5 text-center">
+                                        <span class="badge border px-2 py-1 font-monospace ${payModeClass}" style="font-size: 10px;">${payModeText}</span>
+                                    </td>
+                                    <td class="py-2.5 text-end fw-bold text-primary">₹${parseFloat(row.deposit_amount).toFixed(2)}</td>
+                                    <td class="py-2.5 text-end fw-semibold text-secondary">₹${parseFloat(row.balance_amount).toFixed(2)}</td>
+                                    <td class="py-2.5 text-center pe-4">
+                                        <span class="badge border px-2 py-1 ${statusClass}" style="font-size: 10px;">${statusText}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        // Show loaded table
+                        modalLoading.classList.add('d-none');
+                        modalTableContainer.classList.remove('d-none');
+                    } else {
+                        throw new Error(result.msg || 'No collection records returned.');
+                    }
+                } catch (err) {
+                    console.error("Error loading collection details:", err);
+                    modalErrorMessage.textContent = err.message || 'Connection lost. Please try again.';
+                    modalLoading.classList.add('d-none');
+                    modalError.classList.remove('d-none');
+                }
+            });
+        });
+
+        // 2. CLICK: Send / Upload to Banking Server
+        document.querySelectorAll('.btn-upload').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const transNo = button.getAttribute('data-trans');
+                
+                // Add loading spinner, disable button to prevent double-submissions
+                const originalContent = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span>Sending...</span>
+                `;
+                
+                try {
+                    const response = await fetch('/admin/upload_download/upload-to-banking', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ agent_trans_no: transNo })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.suc > 0) {
+                        showToast(result.msg || 'Upload complete!', true);
+                        
+                        // Update UI without full page refresh:
+                        // 1. Set status badge to 'Sent to Banking'
+                        const rowId = `row-${transNo.replace(/\//g, '-')}`;
+                        const row = document.getElementById(rowId);
+                        if (row) {
+                            const badge = row.querySelector('.status-badge');
+                            if (badge) {
+                                badge.textContent = 'Sent to Banking';
+                                badge.className = 'badge border px-2.5 py-1.5 fw-semibold status-badge bg-success-subtle text-success border-success-subtle';
+                            }
+                        }
+                        
+                        // 2. Keep the upload button disabled and set text
+                        button.innerHTML = `
+                            <i class="bx bx-check-circle fs-6"></i>
+                            <span>Uploaded</span>
+                        `;
+                    } else {
+                        throw new Error(result.msg || 'Simulated upload failed.');
+                    }
+                } catch (err) {
+                    console.error("Banking upload error:", err);
+                    showToast(err.message || 'Server processing error occurred', false);
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                }
+            });
+        });
+    });
+</script>

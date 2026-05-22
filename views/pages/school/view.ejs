@@ -1,0 +1,124 @@
+<div class="card shadow-sm border border-light-subtle rounded-3 mb-4">
+    <div class="card-body p-4">
+        <!-- Top Toolbar Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <!-- Filter Radio Buttons on the Left -->
+            <div class="d-flex align-items-center gap-3 bg-light px-3 py-2 rounded-3 border border-light-subtle">
+                <span class="text-secondary fw-medium" style="font-size: 13px;">Filter Status:</span>
+                
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input cursor-pointer" type="radio" name="statusFilter" id="filterAll" value="all" checked>
+                    <label class="form-check-label cursor-pointer text-dark fw-semibold" for="filterAll" style="font-size: 13px;">All</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input cursor-pointer" type="radio" name="statusFilter" id="filterActive" value="Y">
+                    <label class="form-check-label cursor-pointer text-success fw-semibold" for="filterActive" style="font-size: 13px;">Active</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                    <input class="form-check-input cursor-pointer" type="radio" name="statusFilter" id="filterInactive" value="N">
+                    <label class="form-check-label cursor-pointer text-danger fw-semibold" for="filterInactive" style="font-size: 13px;">In-Active</label>
+                </div>
+            </div>
+            
+            <!-- Add New Button on the Right -->
+            <div>
+                <a href="/admin/school/manage" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm">
+                    <i class="bx bx-plus fs-5"></i>
+                    <span>Add New School</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Schools Datatable -->
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0" id="schoolTable" style="font-size: 14px;">
+                <thead class="table-light">
+                    <tr style="font-size: 12px; text-transform: uppercase; color: var(--text-muted);">
+                        <th class="border-bottom-0 py-3 ps-3">Registration Date</th>
+                        <th class="border-bottom-0 py-3">School Name</th>
+                        <th class="border-bottom-0 py-3 text-center">Max Agents</th>
+                        <th class="border-bottom-0 py-3">Contact Person</th>
+                        <th class="border-bottom-0 py-3 text-center">Status</th>
+                        <th class="border-bottom-0 py-3 text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (school_data && school_data.length > 0) { %>
+                        <% school_data.forEach(function(school) { %>
+                            <tr data-status="<%= school.active_flag %>" class="align-middle">
+                                <td class="py-3 ps-3 fw-medium text-secondary">
+                                    <%= school.reg_date ? dateFormat(school.reg_date, "dd mmm yyyy") : 'N/A' %>
+                                </td>
+                                <td class="py-3 fw-bold text-dark">
+                                    <%= school.school_name %>
+                                    <div class="text-muted fw-normal" style="font-size: 12px; margin-top: 2px;"><%= school.school_address %></div>
+                                </td>
+                                <td class="py-3 text-center fw-semibold text-secondary">
+                                    <%= school.max_user %>
+                                </td>
+                                <td class="py-3 text-secondary">
+                                    <%= school.contact_person %>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <% if (school.active_flag === 'Y') { %>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5" style="font-size: 11px;">Active</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5" style="font-size: 11px;">In-Active</span>
+                                    <% } %>
+                                </td>
+                                <td class="py-3 text-end pe-3">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <!-- Edit Action -->
+                                        <a href="/admin/school/manage?id=<%= school.school_id %>" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold" style="font-size: 12px;">
+                                            <i class="bx bx-edit fs-6"></i>
+                                            <span>Edit</span>
+                                        </a>
+                                        <!-- Disable/Enable Action -->
+                                        <% if (school.active_flag === 'Y') { %>
+                                            <a href="/admin/school/toggle-status/<%= school.school_id %>" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold" style="font-size: 12px;" onclick="return confirm('Are you sure you want to disable this school?');">
+                                                <i class="bx bx-block fs-6"></i>
+                                                <span>Disable</span>
+                                            </a>
+                                        <% } else { %>
+                                            <a href="/admin/school/toggle-status/<%= school.school_id %>" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold" style="font-size: 12px;">
+                                                <i class="bx bx-check-circle fs-6"></i>
+                                                <span>Enable</span>
+                                            </a>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bx bx-folder-open fs-1 mb-2 d-block text-secondary"></i>
+                                <span class="fw-medium">No schools registered yet. Click "Add New" to get started!</span>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery Client-side Status Filtering Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // We use standard jQuery since it's already pre-loaded in layout.ejs
+        $('input[name="statusFilter"]').change(function() {
+            var selectedValue = $(this).val();
+            var $rows = $('#schoolTable tbody tr[data-status]');
+            
+            if ($rows.length === 0) return;
+            
+            if (selectedValue === 'all') {
+                $rows.fadeIn(150);
+            } else {
+                $rows.hide();
+                $('#schoolTable tbody tr[data-status="' + selectedValue + '"]').fadeIn(150);
+            }
+        });
+    });
+</script>

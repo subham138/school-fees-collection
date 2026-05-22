@@ -1,0 +1,157 @@
+<div class="card shadow-sm border border-light-subtle rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom border-light-subtle px-4 py-3 d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0 fw-bold text-dark" style="font-size: 18px;">
+            <%= agent_id > 0 ? 'Edit Agent Settings' : 'Register New Agent' %>
+        </h3>
+        <a href="/admin/agent" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5 px-3 py-2 fw-semibold">
+            <i class="bx bx-arrow-back fs-6"></i>
+            <span>Back to List</span>
+        </a>
+    </div>
+    
+    <div class="card-body p-4">
+        <form action="/admin/agent/manage" method="POST" class="needs-validation" novalidate>
+            <!-- Hidden Agent ID -->
+            <input type="hidden" name="agent_id" value="<%= agent_id %>">
+            
+            <div class="row g-3">
+                <!-- School Selection (Role-based UI) -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-secondary" style="font-size: 13px;">School Name <span class="text-danger">*</span></label>
+                    <% if (user_type === 'A') { %>
+                        <!-- Super Admin: Can select any active school -->
+                        <select class="form-select" id="school_id" name="school_id" required>
+                            <option value="" disabled <%= !agent_data.school_id ? 'selected' : '' %>>Choose a school...</option>
+                            <% school_data.forEach(function(school) { %>
+                                <option value="<%= school.school_id %>" <%= agent_data.school_id === school.school_id ? 'selected' : '' %>><%= school.school_name %></option>
+                            <% }); %>
+                        </select>
+                        <div class="invalid-feedback">Please select a school.</div>
+                    <% } else { %>
+                        <!-- Regular Admin: Preselected own school -->
+                        <input type="hidden" name="school_id" value="<%= school_data[0] ? school_data[0].school_id : '' %>">
+                        <input type="text" class="form-control bg-light text-muted" value="<%= school_data[0] ? school_data[0].school_name : 'Your School' %>" readonly>
+                    <% } %>
+                </div>
+
+                <!-- Agent Code -->
+                <div class="col-md-6">
+                    <label for="agent_code" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Agent Code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control font-monospace" id="agent_code" name="agent_code" value="<%= agent_data.agent_code || '' %>" placeholder="e.g. AGENT001" required>
+                    <div class="invalid-feedback">Please enter the agent code.</div>
+                </div>
+
+                <!-- Agent Name -->
+                <div class="col-md-6">
+                    <label for="agent_name" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Agent Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="agent_name" name="agent_name" value="<%= agent_data.agent_name || '' %>" placeholder="e.g. Ramesh Samanta" required>
+                    <div class="invalid-feedback">Please enter the agent name.</div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="col-md-6">
+                    <label for="phone_no" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Phone Number <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control" id="phone_no" name="phone_no" value="<%= agent_data.phone_no || '' %>" placeholder="e.g. 9876543210" required>
+                    <div class="invalid-feedback">Please enter a valid phone number.</div>
+                </div>
+
+                <!-- Email ID -->
+                <div class="col-md-6">
+                    <label for="email_id" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Email Address</label>
+                    <input type="email" class="form-control" id="email_id" name="email_id" value="<%= agent_data.email_id || '' %>" placeholder="e.g. ramesh@gmail.com">
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
+                </div>
+
+                <!-- Max Collection Amount -->
+                <div class="col-md-6">
+                    <label for="max_amt" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Max Collection Limit (₹) <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" class="form-control" id="max_amt" name="max_amt" value="<%= agent_data.max_amt !== undefined ? agent_data.max_amt : '10000.00' %>" min="0" required>
+                    <div class="invalid-feedback">Please enter a valid collection amount limit.</div>
+                </div>
+
+                <!-- Allow Collection Days -->
+                <div class="col-md-6">
+                    <label for="allow_collection_days" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Allowed Collection Days <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="allow_collection_days" name="allow_collection_days" value="<%= agent_data.allow_collection_days !== undefined ? agent_data.allow_collection_days : '30' %>" min="1" required>
+                    <div class="invalid-feedback">Collection days must be at least 1 day.</div>
+                </div>
+
+                <!-- Account Number -->
+                <div class="col-md-6">
+                    <label for="account_no" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Bank Account Number</label>
+                    <input type="text" class="form-control" id="account_no" name="account_no" value="<%= agent_data.account_no || '' %>" placeholder="e.g. 501002938475">
+                </div>
+                
+                <!-- Printer Type -->
+                <div class="col-md-6">
+                    <label for="printer_type" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Hardware Printer Type <span class="text-danger">*</span></label>
+                    <select class="form-select" id="printer_type" name="printer_type" required>
+                        <option value="ESCPOS" <%= agent_data.printer_type === 'ESCPOS' || !agent_data.printer_type ? 'selected' : '' %>>ESC/POS Thermal Printer</option>
+                        <option value="Bluetooth" <%= agent_data.printer_type === 'Bluetooth' ? 'selected' : '' %>>Generic Bluetooth</option>
+                        <option value="Other" <%= agent_data.printer_type === 'Other' ? 'selected' : '' %>>Other Printer</option>
+                    </select>
+                    <div class="invalid-feedback">Please choose a printer type.</div>
+                </div>
+
+                <!-- Print Options (Width) -->
+                <div class="col-md-6">
+                    <label for="print_opt" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Receipt Width (Print Option) <span class="text-danger">*</span></label>
+                    <select class="form-select" id="print_opt" name="print_opt" required>
+                        <option value="2" <%= agent_data.print_opt === '2' || !agent_data.print_opt ? 'selected' : '' %>>2 Inch Receipt</option>
+                        <option value="3" <%= agent_data.print_opt === '3' ? 'selected' : '' %>>3 Inch Receipt</option>
+                    </select>
+                    <div class="invalid-feedback">Please choose a receipt size.</div>
+                </div>
+
+                <!-- Account Status -->
+                <div class="col-md-6">
+                    <label for="active_flag" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Agent Account Status <span class="text-danger">*</span></label>
+                    <select class="form-select" id="active_flag" name="active_flag" required>
+                        <option value="Y" <%= agent_data.active_flag === 'Y' || !agent_data.active_flag ? 'selected' : '' %>>Active</option>
+                        <option value="N" <%= agent_data.active_flag === 'N' ? 'selected' : '' %>>In-Active</option>
+                    </select>
+                    <div class="invalid-feedback">Please choose a status.</div>
+                </div>
+
+                <!-- Device ID -->
+                <div class="col-md-6">
+                    <label for="device_id" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Device ID</label>
+                    <input type="text" class="form-control" id="device_id" name="device_id" value="<%= agent_data.device_id || '' %>" placeholder="e.g. DEVICE12345">
+                </div>
+
+                <!-- Agent Address -->
+                <div class="col-md-6">
+                    <label for="agent_address" class="form-label fw-semibold text-secondary" style="font-size: 13px;">Agent Residential Address</label>
+                    <textarea class="form-control" id="agent_address" name="agent_address" rows="1" placeholder="Enter residential address details..."><%= agent_data.agent_address || '' %></textarea>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-flex justify-content-end gap-2 border-top border-light-subtle mt-4 pt-3">
+                <a href="/admin/agent" class="btn btn-light px-4 py-2 fw-semibold text-secondary border border-light-subtle">Cancel</a>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-1.5 px-4 py-2 fw-semibold shadow-sm">
+                    <i class="bx bx-save fs-5"></i>
+                    <span><%= agent_id > 0 ? 'Save Updates' : 'Register Agent' %></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bootstrap form validation script -->
+<script>
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>

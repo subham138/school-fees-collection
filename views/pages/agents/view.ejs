@@ -1,0 +1,160 @@
+<div class="card shadow-sm border border-light-subtle rounded-3 mb-4">
+    <div class="card-body p-4">
+        <!-- Top Toolbar Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <!-- Filter Options Block -->
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <!-- Status Filter Radios -->
+                <div class="d-flex align-items-center gap-3 bg-light px-3 py-2 rounded-3 border border-light-subtle">
+                    <span class="text-secondary fw-medium" style="font-size: 13px;">Status:</span>
+                    <div class="form-check form-check-inline mb-0">
+                        <input class="form-check-input cursor-pointer" type="radio" name="statusFilter" id="filterAll" value="all" checked>
+                        <label class="form-check-label cursor-pointer text-dark fw-semibold" for="filterAll" style="font-size: 13px;">All</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                        <input class="form-check-input cursor-pointer" type="radio" name="statusFilter" id="filterActive" value="Y">
+                        <label class="form-check-label cursor-pointer text-success fw-semibold" for="filterActive" style="font-size: 13px;">Active</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                        <input class="form-check-input cursor-pointer" type="radio" name="statusFilter" id="filterInactive" value="N">
+                        <label class="form-check-label cursor-pointer text-danger fw-semibold" for="filterInactive" style="font-size: 13px;">In-Active</label>
+                    </div>
+                </div>
+
+                <!-- School Selection Filter (Only shown to Super Admin) -->
+                <% if (user_type === 'A' && school_data && school_data.length > 0) { %>
+                    <div class="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded-3 border border-light-subtle">
+                        <span class="text-secondary fw-medium" style="font-size: 13px; white-space: nowrap;">School:</span>
+                        <select class="form-select border-0 bg-transparent py-0 fw-semibold cursor-pointer text-dark" id="schoolFilter" style="font-size: 13px; outline: none; min-width: 180px; box-shadow: none;">
+                            <option value="all">All Schools</option>
+                            <% school_data.forEach(function(school) { %>
+                                <option value="<%= school.school_id %>"><%= school.school_name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                <% } %>
+            </div>
+            
+            <!-- Add New Button -->
+            <div>
+                <a href="/admin/agent/manage" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 fw-semibold shadow-sm">
+                    <i class="bx bx-plus fs-5"></i>
+                    <span>Add New Agent</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Agents Datatable -->
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0" id="agentTable" style="font-size: 14px;">
+                <thead class="table-light">
+                    <tr style="font-size: 12px; text-transform: uppercase; color: var(--text-muted);">
+                        <th class="border-bottom-0 py-3 ps-3">Agent Code</th>
+                        <th class="border-bottom-0 py-3">Agent Name</th>
+                        <% if (user_type === 'A') { %>
+                            <th class="border-bottom-0 py-3">School</th>
+                        <% } %>
+                        <th class="border-bottom-0 py-3">Phone No</th>
+                        <th class="border-bottom-0 py-3 text-end">Max Amount</th>
+                        <th class="border-bottom-0 py-3 text-center">Status</th>
+                        <th class="border-bottom-0 py-3 text-end pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (agent_data && agent_data.length > 0) { %>
+                        <% agent_data.forEach(function(agent) { %>
+                            <tr data-school-id="<%= agent.school_id %>" data-status="<%= agent.active_flag %>" class="align-middle">
+                                <td class="py-3 ps-3 fw-bold text-secondary">
+                                    <span class="badge bg-light text-dark border border-light-subtle px-2 py-1.5 font-monospace"><%= agent.agent_code %></span>
+                                </td>
+                                <td class="py-3 fw-bold text-dark">
+                                    <%= agent.agent_name %>
+                                    <% if (agent.agent_address) { %>
+                                        <div class="text-muted fw-normal" style="font-size: 12px; margin-top: 2px;"><%= agent.agent_address %></div>
+                                    <% } %>
+                                </td>
+                                <% if (user_type === 'A') { %>
+                                    <td class="py-3 fw-semibold text-primary">
+                                        <%= agent.school_name || 'N/A' %>
+                                    </td>
+                                <% } %>
+                                <td class="py-3 text-secondary">
+                                    <%= agent.phone_no %>
+                                </td>
+                                <td class="py-3 text-end fw-semibold text-secondary">
+                                    ₹<%= parseFloat(agent.max_amt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <% if (agent.active_flag === 'Y') { %>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5" style="font-size: 11px;">Active</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5" style="font-size: 11px;">In-Active</span>
+                                    <% } %>
+                                </td>
+                                <td class="py-3 text-end pe-3">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <!-- Edit Action -->
+                                        <a href="/admin/agent/manage?id=<%= agent.agent_id %>" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold" style="font-size: 12px;">
+                                            <i class="bx bx-edit fs-6"></i>
+                                            <span>Edit</span>
+                                        </a>
+                                        <!-- Disable/Enable Action -->
+                                        <% if (agent.active_flag === 'Y') { %>
+                                            <a href="/admin/agent/toggle-status/<%= agent.agent_id %>" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold" style="font-size: 12px;" onclick="return confirm('Are you sure you want to disable this agent?');">
+                                                <i class="bx bx-block fs-6"></i>
+                                                <span>Disable</span>
+                                            </a>
+                                        <% } else { %>
+                                            <a href="/admin/agent/toggle-status/<%= agent.agent_id %>" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold" style="font-size: 12px;">
+                                                <i class="bx bx-check-circle fs-6"></i>
+                                                <span>Enable</span>
+                                            </a>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="<%= user_type === 'A' ? '7' : '6' %>" class="text-center py-5 text-muted">
+                                <i class="bx bx-folder-open fs-1 mb-2 d-block text-secondary"></i>
+                                <span class="fw-medium">No agents registered yet. Click "Add New" to get started!</span>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- jQuery Multi-dimensional Filtering Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        function applyFilters() {
+            var schoolVal = $('#schoolFilter').val() || 'all';
+            var statusVal = $('input[name="statusFilter"]:checked').val() || 'all';
+            var $rows = $('#agentTable tbody tr[data-status]');
+            
+            if ($rows.length === 0) return;
+            
+            $rows.each(function() {
+                var $row = $(this);
+                var rowSchoolId = $row.attr('data-school-id');
+                var rowStatus = $row.attr('data-status');
+                
+                var matchesSchool = (schoolVal === 'all' || rowSchoolId === schoolVal);
+                var matchesStatus = (statusVal === 'all' || rowStatus === statusVal);
+                
+                if (matchesSchool && matchesStatus) {
+                    $row.fadeIn(150);
+                } else {
+                    $row.hide();
+                }
+            });
+        }
+        
+        $('#schoolFilter').change(applyFilters);
+        $('input[name="statusFilter"]').change(applyFilters);
+    });
+</script>
