@@ -113,11 +113,34 @@ collectionRouter.post('/save', async (req, res) => {
         const transaction_date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         const collected_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:MM:SS
         
-        // Need to calculate balance amount? Or we just assume it updates later.
+        // Calculate balance_amount: deposit amount - cumulative collected amount
+        let balance_amount = 0;
+        try {
+            // 1. Fetch deposit amount from td_account_dtls
+            const accountSelect = await db_Select('depost_amt', 'td_account_dtls', 'account_dtls_id = ?', null, [account_dtls_id]);
+            let depost_amt = 0;
+            if (accountSelect.suc > 0 && accountSelect.msg.length > 0) {
+                depost_amt = parseFloat(accountSelect.msg[0].depost_amt) || 0;
+            }
+
+            // 2. Fetch sum of previous collections for this account_dtls_id
+            const prevSelect = await db_Select('SUM(deposit_amount) as total_prev', 'td_collection', 'account_dtls_id = ?', null, [account_dtls_id]);
+            let total_prev = 0;
+            if (prevSelect.suc > 0 && prevSelect.msg.length > 0) {
+                total_prev = parseFloat(prevSelect.msg[0].total_prev) || 0;
+            }
+
+            // 3. Compute remaining balance amount
+            const current_deposit = parseFloat(deposit_amount) || 0;
+            balance_amount = depost_amt - (total_prev + current_deposit);
+        } catch (calcError) {
+            console.error("Error calculating balance amount:", calcError);
+            balance_amount = 0;
+        }
         
-        const fields = '(receipt_no, agent_trans_no, school_id, agent_code, transaction_date, account_dtls_id, student_name, guardian_name, deposit_amount, collection_month, remarks, collection_by, collected_at)';
-        const values = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-        const params = [receipt_no, agent_trans_no, school_id, agent_code, transaction_date, account_dtls_id, student_name, guardian_name, deposit_amount, collection_month, remarks, req.user.id, collected_at];
+        const fields = '(receipt_no, agent_trans_no, school_id, agent_code, transaction_date, account_dtls_id, student_name, guardian_name, deposit_amount, balance_amount, collection_month, remarks, collection_by, collected_at)';
+        const values = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const params = [receipt_no, agent_trans_no, school_id, agent_code, transaction_date, account_dtls_id, student_name, guardian_name, deposit_amount, balance_amount, collection_month, remarks, req.user.id, collected_at];
 
         const result = await db_Insert('td_collection', fields, values, null, 0, params);
         

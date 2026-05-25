@@ -20,7 +20,7 @@ upDwRouter.get('/', async (req, res) => {
             school_data = schools.suc > 0 ? schools.msg : [];
         } else {
             // Regular Admin: Fetch active agents belonging to admin's school
-            const agents = await db_Select('agent_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [user.school_id]);
+            const agents = await db_Select('agent_id, school_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [user.school_id]);
             agent_data = agents.suc > 0 ? agents.msg : [];
         }
     } catch (err) {
@@ -40,7 +40,7 @@ upDwRouter.get('/', async (req, res) => {
 upDwRouter.get('/agents/:school_id', async (req, res) => {
     const school_id = req.params.school_id;
     try {
-        const agents = await db_Select('agent_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [school_id]);
+        const agents = await db_Select('agent_id, school_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [school_id]);
         res.json({ suc: 1, msg: agents.suc > 0 ? agents.msg : [] });
     } catch (err) {
         res.json({ suc: 0, msg: 'Error fetching agents' });
@@ -202,12 +202,12 @@ upDwRouter.get('/view', async (req, res) => {
             
             if (selected_school_id) {
                 // Fetch agents for the selected school
-                const agents = await db_Select('agent_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [selected_school_id]);
+                const agents = await db_Select('agent_id, school_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [selected_school_id]);
                 agent_data = agents.suc > 0 ? agents.msg : [];
             }
         } else {
             // Regular Admin: Fetch agents for their own school
-            const agents = await db_Select('agent_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [user.school_id]);
+            const agents = await db_Select('agent_id, school_id, agent_code, agent_name', 'md_agent', 'school_id = ? AND delete_flag = "N" AND active_flag = "Y"', null, [user.school_id]);
             agent_data = agents.suc > 0 ? agents.msg : [];
         }
         

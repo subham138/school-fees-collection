@@ -6,17 +6,19 @@
     <div class="sidebar-menu-wrapper">
         <ul class="sidebar-menu">
             <li>
-                <a href="/dashboard/super-admin" class="<%= (locals.currentPage === 'dashboard') ? 'active' : '' %>">
+                <a href="/dashboard/<%= user.user_data.user_type == 'S' ? 'super-admin' : 'admin' %>" class="<%= (locals.currentPage === 'dashboard') ? 'active' : '' %>">
                     <i class="bx bx-grid-alt"></i>
                     <span class="menu-text">Dashboard</span>
                 </a>
             </li>
-            <li>
-                <a href="/admin/school" class="<%= (locals.currentPage === 'school') ? 'active' : '' %>">
-                    <i class="bx bx-buildings"></i>
-                    <span class="menu-text">Schools</span>
-                </a>
-            </li>
+            <% if(user.user_data.user_type == 'S'){ %>
+                <li>
+                    <a href="/admin/school" class="<%= (locals.currentPage === 'school') ? 'active' : '' %>">
+                        <i class="bx bx-buildings"></i>
+                        <span class="menu-text">Schools</span>
+                    </a>
+                </li>
+            <% } %>
             <li>
                 <a href="/admin/agent" class="<%= (locals.currentPage === 'agent') ? 'active' : '' %>">
                     <i class="bx bx-group"></i>

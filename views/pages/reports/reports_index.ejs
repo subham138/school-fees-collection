@@ -1,0 +1,454 @@
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card p-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%); color: #ffffff; margin-bottom: 24px;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2 class="fw-bold mb-1" style="font-size: 24px;"><i class="bx bx-bar-chart-alt-2 me-2"></i>Fee Collection Reports</h2>
+                    <p class="mb-0 opacity-75" style="font-size: 14px;">Generate, analyze, and export collection reports for auditing and system insights.</p>
+                </div>
+                <div class="d-none d-md-block">
+                    <span class="badge bg-white bg-opacity-20 text-white px-3 py-2 border border-white border-opacity-10" style="font-size: 12px; font-weight: 500;">
+                        Role: <%= user.user_data.user_type == 'S' ? 'Super Admin' : 'School Admin' %>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Navigation Tabs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card p-0 overflow-hidden shadow-sm border border-light-subtle">
+            <div class="bg-light px-3 pt-3 border-bottom">
+                <nav class="nav nav-tabs border-bottom-0" id="report-nav" role="tablist">
+                    <button class="nav-link py-3 px-4 fw-semibold border-0 <%= activeReport == 'agent_summary' ? 'active text-primary border-bottom border-primary border-3' : 'text-muted' %>" 
+                            style="font-size: 14px; background: transparent; transition: all 0.2s;" 
+                            onclick="selectReport('agent_summary')">
+                        <i class="bx bx-user me-2"></i>Agent Collection Summary
+                    </button>
+                    <button class="nav-link py-3 px-4 fw-semibold border-0 <%= activeReport == 'detailed_register' ? 'active text-primary border-bottom border-primary border-3' : 'text-muted' %>" 
+                            style="font-size: 14px; background: transparent; transition: all 0.2s;" 
+                            onclick="selectReport('detailed_register')">
+                        <i class="bx bx-list-ul me-2"></i>Detailed Register
+                    </button>
+                    <% if(user.user_data.user_type == 'S') { %>
+                        <button class="nav-link py-3 px-4 fw-semibold border-0 <%= activeReport == 'school_summary' ? 'active text-primary border-bottom border-primary border-3' : 'text-muted' %>" 
+                                style="font-size: 14px; background: transparent; transition: all 0.2s;" 
+                                onclick="selectReport('school_summary')">
+                            <i class="bx bx-buildings me-2"></i>School Wise Summary
+                        </button>
+                    <% } else { %>
+                        <button class="nav-link py-3 px-4 fw-semibold border-0 <%= activeReport == 'class_summary' ? 'active text-primary border-bottom border-primary border-3' : 'text-muted' %>" 
+                                style="font-size: 14px; background: transparent; transition: all 0.2s;" 
+                                onclick="selectReport('class_summary')">
+                            <i class="bx bx-grid me-2"></i>Class Wise Summary
+                        </button>
+                    <% } %>
+                </nav>
+            </div>
+
+            <!-- Filters Form -->
+            <div class="card-body p-4 bg-white">
+                <form id="report-filter-form" method="GET" action="/admin/report">
+                    <!-- Hidden report type input -->
+                    <input type="hidden" name="report_type" id="report_type_input" value="<%= activeReport %>">
+                    
+                    <div class="row g-3">
+                        <!-- Date range always visible -->
+                        <div class="col-md-3">
+                            <label class="form-label text-muted fw-medium" style="font-size: 12px;">From Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bx bx-calendar text-muted"></i></span>
+                                <input type="date" name="from_date" class="form-control bg-light border-start-0" style="font-size: 14px;" value="<%= fromDate %>" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted fw-medium" style="font-size: 12px;">To Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bx bx-calendar text-muted"></i></span>
+                                <input type="date" name="to_date" class="form-control bg-light border-start-0" style="font-size: 14px;" value="<%= toDate %>" required>
+                            </div>
+                        </div>
+
+                        <!-- School Filter: Visible only to Super-Admin -->
+                        <% if(user.user_data.user_type == 'S') { %>
+                            <div class="col-md-3 school-filter-group">
+                                <label class="form-label text-muted fw-medium" style="font-size: 12px;">School</label>
+                                <select name="school_id" id="school_id_select" class="form-select bg-light" style="font-size: 14px;">
+                                    <option value="">All Schools</option>
+                                    <% schools.forEach(function(school) { %>
+                                        <option value="<%= school.school_id %>" <%= selectedSchool == school.school_id ? 'selected' : '' %>><%= school.school_name %></option>
+                                    <% }) %>
+                                </select>
+                            </div>
+                        <% } else { %>
+                            <input type="hidden" name="school_id" value="<%= user.user_data.school_id %>">
+                        <% } %>
+
+                        <!-- Agent filter: Hide for school_summary -->
+                        <div class="col-md-3 agent-filter-group" <%= activeReport == 'school_summary' ? 'style="display:none;"' : '' %>>
+                            <label class="form-label text-muted fw-medium" style="font-size: 12px;">Agent</label>
+                            <select name="agent_code" id="agent_code_select" class="form-select bg-light" style="font-size: 14px;">
+                                <option value="">All Agents</option>
+                                <% agents.forEach(function(agent) { %>
+                                    <option value="<%= agent.agent_code %>" data-school="<%= agent.school_id %>" <%= selectedAgent == agent.agent_code ? 'selected' : '' %>><%= agent.agent_name %> (<%= agent.agent_code %>)</option>
+                                <% }) %>
+                            </select>
+                        </div>
+
+                        <!-- Status filter: Show only for detailed_register -->
+                        <div class="col-md-3 status-filter-group" <%= activeReport == 'detailed_register' ? '' : 'style="display:none;"' %>>
+                            <label class="form-label text-muted fw-medium" style="font-size: 12px;">Upload Status</label>
+                            <select name="status" class="form-select bg-light" style="font-size: 14px;">
+                                <option value="ALL" <%= selectedStatus == 'ALL' ? 'selected' : '' %>>All Statuses</option>
+                                <option value="N" <%= selectedStatus == 'N' ? 'selected' : '' %>>Pending Banking Upload</option>
+                                <option value="Y" <%= selectedStatus == 'Y' ? 'selected' : '' %>>Sent to Banking</option>
+                            </select>
+                        </div>
+
+                        <!-- Text Search filter: Show only for detailed_register -->
+                        <div class="col-md-3 search-filter-group" <%= activeReport == 'detailed_register' ? '' : 'style="display:none;"' %>>
+                            <label class="form-label text-muted fw-medium" style="font-size: 12px;">Receipt / Student Search</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bx bx-search text-muted"></i></span>
+                                <input type="text" name="search" class="form-control bg-light border-start-0" placeholder="Search..." style="font-size: 14px;" value="<%= search %>">
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="col-12 d-flex justify-content-end gap-2 mt-3 pt-2 border-top border-light">
+                            <button type="reset" class="btn btn-outline-secondary px-4" style="font-size: 14px;" onclick="window.location.href='/admin/report?report_type=' + document.getElementById('report_type_input').value">
+                                <i class="bx bx-reset me-1"></i>Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary px-5 fw-medium" style="font-size: 14px; background-color: #4f46e5; border-color: #4f46e5;">
+                                <i class="bx bx-filter-alt me-1"></i>Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Card -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border border-light-subtle">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom border-light">
+                <h3 class="card-title mb-0" style="font-size: 16px; font-weight: 600;">
+                    <i class="bx bx-table text-primary me-2"></i>Report Output
+                </h3>
+                <% if(results && results.length > 0) { %>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1.5" style="font-size: 13px;" onclick="window.print()">
+                            <i class="bx bx-printer fs-6"></i>Print
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm px-3 d-flex align-items-center gap-1.5" style="font-size: 13px;" onclick="exportTableToCSV('<%= activeReport %>_report.csv')">
+                            <i class="bx bx-download fs-6"></i>Export CSV
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+            
+            <div class="card-body p-0">
+                <% if(!results || results.length == 0) { %>
+                    <div class="text-center py-5">
+                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='64' height='64'><path fill='%2394a3b8' d='M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19M7,7V9H17V7H7M7,11V13H17V11H7M7,15V17H14V15H7Z'/></svg>" 
+                             alt="No Data" class="mb-3 opacity-50" style="max-height: 80px;">
+                        <h4 class="text-muted fw-semibold mb-1" style="font-size: 16px;">No collection records found</h4>
+                        <p class="text-muted mb-0" style="font-size: 13px;">Try widening your date range or adjusting the filter options.</p>
+                    </div>
+                <% } else { %>
+                    <div class="table-responsive">
+                        <!-- Table standard formatting -->
+                        <table class="table align-middle table-hover mb-0" id="report-output-table" style="font-size: 14px;">
+                            
+                            <!-- REPORT TYPE 1: AGENT COLLECTION SUMMARY -->
+                            <% if(activeReport == 'agent_summary') { %>
+                                <thead class="table-light">
+                                    <tr style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-top: none;">
+                                        <th class="py-3 px-4 border-bottom-0">Sl No</th>
+                                        <th class="py-3 border-bottom-0">Agent Code</th>
+                                        <th class="py-3 border-bottom-0">Agent Name</th>
+                                        <% if(user.user_data.user_type == 'S') { %>
+                                            <th class="py-3 border-bottom-0">School</th>
+                                        <% } %>
+                                        <th class="py-3 text-center border-bottom-0">Trans Count</th>
+                                        <th class="py-3 text-end border-bottom-0">Pending Upload</th>
+                                        <th class="py-3 text-end border-bottom-0">Sent to Banking</th>
+                                        <th class="py-3 text-end border-bottom-0 px-4">Total Collected</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% results.forEach(function(row, idx) { %>
+                                        <tr style="transition: background-color 0.2s;">
+                                            <td class="px-4 fw-medium text-muted"><%= idx + 1 %></td>
+                                            <td class="fw-semibold"><%= row.agent_code %></td>
+                                            <td><%= row.agent_name %></td>
+                                            <% if(user.user_data.user_type == 'S') { %>
+                                                <td class="text-muted"><%= row.school_name %></td>
+                                            <% } %>
+                                            <td class="text-center fw-medium"><%= row.total_receipts %></td>
+                                            <td class="text-end fw-semibold text-warning">₹<%= Number(row.total_pending).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-end fw-semibold text-success">₹<%= Number(row.total_uploaded).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-end fw-bold text-primary px-4">₹<%= Number(row.total_collected).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+
+                            <!-- REPORT TYPE 2: DETAILED COLLECTION REGISTER -->
+                            <% } else if(activeReport == 'detailed_register') { %>
+                                <thead class="table-light">
+                                    <tr style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-top: none;">
+                                        <th class="py-3 px-4 border-bottom-0">Sl No</th>
+                                        <th class="py-3 border-bottom-0">Receipt No</th>
+                                        <th class="py-3 border-bottom-0">Date</th>
+                                        <th class="py-3 border-bottom-0">Student Name</th>
+                                        <th class="py-3 border-bottom-0">Guardian Name</th>
+                                        <th class="py-3 border-bottom-0">Agent (Code)</th>
+                                        <% if(user.user_data.user_type == 'S') { %>
+                                            <th class="py-3 border-bottom-0">School</th>
+                                        <% } %>
+                                        <th class="py-3 text-center border-bottom-0">Status</th>
+                                        <th class="py-3 text-end border-bottom-0 px-4">Deposit Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% results.forEach(function(row, idx) { %>
+                                        <tr style="transition: background-color 0.2s;">
+                                            <td class="px-4 fw-medium text-muted"><%= idx + 1 %></td>
+                                            <td class="fw-semibold text-dark"><%= row.receipt_no %></td>
+                                            <td class="text-muted" style="white-space: nowrap;">
+                                                <%= new Date(row.transaction_date).toLocaleDateString('en-IN', {day: '2-digit', month: '2-digit', year: 'numeric'}) %>
+                                            </td>
+                                            <td class="fw-semibold"><%= row.student_name %></td>
+                                            <td class="text-muted"><%= row.guardian_name %></td>
+                                            <td>
+                                                <div style="font-size: 13px;"><%= row.agent_name %></div>
+                                                <div style="font-size: 11px;" class="text-muted">Code: <%= row.agent_code %></div>
+                                            </td>
+                                            <% if(user.user_data.user_type == 'S') { %>
+                                                <td class="text-muted" style="font-size: 13px;"><%= row.school_name %></td>
+                                            <% } %>
+                                            <td class="text-center">
+                                                <% if(row.download_flag == 'Y') { %>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 11px; font-weight: 500;">Sent to Banking</span>
+                                                <% } else { %>
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 11px; font-weight: 500;">Pending Upload</span>
+                                                <% } %>
+                                            </td>
+                                            <td class="text-end fw-bold text-success px-4">₹<%= Number(row.deposit_amount).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+
+                            <!-- REPORT TYPE 3: CLASS-WISE FEE SUMMARY (Admin only) -->
+                            <% } else if(activeReport == 'class_summary') { %>
+                                <thead class="table-light">
+                                    <tr style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-top: none;">
+                                        <th class="py-3 px-4 border-bottom-0">Sl No</th>
+                                        <th class="py-3 border-bottom-0">Class Name</th>
+                                        <th class="py-3 text-center border-bottom-0">Total Students</th>
+                                        <th class="py-3 text-end border-bottom-0">Expected Fees</th>
+                                        <th class="py-3 text-end border-bottom-0">Collected Fees</th>
+                                        <th class="py-3 text-end border-bottom-0">Outstanding Amount</th>
+                                        <th class="py-3 text-center border-bottom-0 px-4">Collection %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% results.forEach(function(row, idx) { %>
+                                        <% 
+                                            const outstanding = Math.max(0, row.total_expected - row.total_collected);
+                                            const percent = row.total_expected > 0 ? ((row.total_collected / row.total_expected) * 100).toFixed(1) : '0.0';
+                                        %>
+                                        <tr style="transition: background-color 0.2s;">
+                                            <td class="px-4 fw-medium text-muted"><%= idx + 1 %></td>
+                                            <td class="fw-semibold text-dark">Class <%= row.class_name %></td>
+                                            <td class="text-center fw-medium"><%= row.total_students %></td>
+                                            <td class="text-end fw-semibold">₹<%= Number(row.total_expected).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-end fw-semibold text-success">₹<%= Number(row.total_collected).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-end fw-bold text-danger">₹<%= Number(outstanding).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-center px-4">
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <div class="progress flex-grow-1" style="height: 6px; width: 60px; background-color: var(--body-bg);">
+                                                        <div class="progress-bar <%= percent >= 80 ? 'bg-success' : percent >= 40 ? 'bg-primary' : 'bg-warning' %>" role="progressbar" style="width: <%= percent %>%"></div>
+                                                    </div>
+                                                    <span class="fw-bold" style="font-size: 13px; width: 40px; text-align: right;"><%= percent %>%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+
+                            <!-- REPORT TYPE 4: SCHOOL-WISE SUMMARY (Super-Admin only) -->
+                            <% } else if(activeReport == 'school_summary') { %>
+                                <thead class="table-light">
+                                    <tr style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-top: none;">
+                                        <th class="py-3 px-4 border-bottom-0">Sl No</th>
+                                        <th class="py-3 border-bottom-0">School Name</th>
+                                        <th class="py-3 text-center border-bottom-0">Agents</th>
+                                        <th class="py-3 text-center border-bottom-0">Students</th>
+                                        <th class="py-3 text-end border-bottom-0">Expected Fees</th>
+                                        <th class="py-3 text-end border-bottom-0">Collected Fees</th>
+                                        <th class="py-3 text-end border-bottom-0">Outstanding Amount</th>
+                                        <th class="py-3 text-center border-bottom-0 px-4">Collection %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% results.forEach(function(row, idx) { %>
+                                        <% 
+                                            const outstanding = Math.max(0, row.total_expected - row.total_collected);
+                                            const percent = row.total_expected > 0 ? ((row.total_collected / row.total_expected) * 100).toFixed(1) : '0.0';
+                                        %>
+                                        <tr style="transition: background-color 0.2s;">
+                                            <td class="px-4 fw-medium text-muted"><%= idx + 1 %></td>
+                                            <td>
+                                                <div class="fw-semibold text-dark"><%= row.school_name %></div>
+                                                <div style="font-size: 11px;" class="text-muted"><%= row.school_address %></div>
+                                            </td>
+                                            <td class="text-center fw-medium"><%= row.active_agents %></td>
+                                            <td class="text-center fw-medium"><%= row.total_students %></td>
+                                            <td class="text-end fw-semibold">₹<%= Number(row.total_expected).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-end fw-semibold text-success">₹<%= Number(row.total_collected).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-end fw-bold text-danger">₹<%= Number(outstanding).toLocaleString('en-IN', {minimumFractionDigits: 2}) %></td>
+                                            <td class="text-center px-4">
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <div class="progress flex-grow-1" style="height: 6px; width: 60px; background-color: var(--body-bg);">
+                                                        <div class="progress-bar <%= percent >= 80 ? 'bg-success' : percent >= 40 ? 'bg-primary' : 'bg-warning' %>" role="progressbar" style="width: <%= percent %>%"></div>
+                                                    </div>
+                                                    <span class="fw-bold" style="font-size: 13px; width: 40px; text-align: right;"><%= percent %>%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            <% } %>
+
+                        </table>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print-Only Page Specific CSS -->
+<style>
+@media print {
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    /* Hide layout items */
+    .sidebar,
+    .top-header,
+    .bottom-footer,
+    #report-nav,
+    #report-filter-form,
+    .card-header .btn,
+    .row.mb-4:first-of-type,
+    #toggleSidebar {
+        display: none !important;
+    }
+    /* Set content styles */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    .content-body {
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    th, td {
+        border: 1px solid #dee2e6 !important;
+        padding: 8px !important;
+    }
+}
+</style>
+
+<script>
+// Tab redirection helper
+function selectReport(reportType) {
+    document.getElementById('report_type_input').value = reportType;
+    // Auto submit form to load details immediately
+    document.getElementById('report-filter-form').submit();
+}
+
+// Interactive school-agent filter syncing (for Super Admin UI)
+document.addEventListener('DOMContentLoaded', function() {
+    const schoolSelect = document.getElementById('school_id_select');
+    const agentSelect = document.getElementById('agent_code_select');
+    
+    if (schoolSelect && agentSelect) {
+        const originalOptions = Array.from(agentSelect.options);
+        
+        function filterAgents() {
+            const selectedSchoolId = schoolSelect.value;
+            
+            // Clear current options except "All Agents"
+            agentSelect.innerHTML = '';
+            agentSelect.appendChild(originalOptions[0]);
+            
+            originalOptions.forEach((opt, idx) => {
+                if (idx === 0) return;
+                const agentSchoolId = opt.getAttribute('data-school');
+                if (!selectedSchoolId || agentSchoolId === selectedSchoolId) {
+                    agentSelect.appendChild(opt.cloneNode(true));
+                }
+            });
+        }
+        
+        // Bind event and run initially to match state
+        schoolSelect.addEventListener('change', filterAgents);
+        filterAgents();
+    }
+});
+
+// CSV Export Script
+function exportTableToCSV(filename) {
+    const csv = [];
+    const rows = document.querySelectorAll("#report-output-table tr");
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll("td, th");
+        
+        for (let j = 0; j < cols.length; j++) {
+            // Clean up content, escape double quotes, handle ₹ signs
+            let data = cols[j].innerText.trim();
+            // Remove inner progress bars or secondary strings
+            data = data.replace(/[\n\r]+/g, " ");
+            data = data.replace(/₹/g, "");
+            data = data.replace(/"/g, '""');
+            row.push('"' + data + '"');
+        }
+        
+        csv.push(row.join(","));
+    }
+
+    // Download CSV file
+    const csvFile = new Blob([csv.join("\n")], {type: "text/csv;charset=utf-8;"});
+    const downloadLink = document.createElement("a");
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = "none";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+</script>

@@ -248,7 +248,7 @@
                         selectAgent.disabled = false;
                         selectAgent.innerHTML = '<option value="" selected disabled>Select agent...</option>';
                         result.msg.forEach(agent => {
-                            selectAgent.innerHTML += `<option value="${agent.agent_code}">${agent.agent_name} (${agent.agent_code})</option>`;
+                            selectAgent.innerHTML += `<option value="${agent.agent_code}" data-school-id="${agent.school_id}">${agent.agent_name} (${agent.agent_code})</option>`;
                         });
                     } else {
                         selectAgent.innerHTML = '<option value="" selected disabled>No agents found for school...</option>';
